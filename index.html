@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!--
+local just this: http://localhost/apps/traffic/
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Traffic</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap"
+          rel="stylesheet">
+
+    <link rel='stylesheet' type='text/css' href='css/traffic.css'/>
+    <link rel='stylesheet' type='text/css' href='css/carEditor.css'/>
+
+    <script src="frameworks/d3.v7.min.js"></script>
+
+</head>
+<body>
+<h3>traffic</h3>
+
+<div id="map">
+    <div id="mapControls">
+        <span id="timePlace"></span>
+        <input id="stepButton" type="button" value="step">
+        <input id="carButton" type="button" value="new car">
+        &emsp;
+        <span id="focusCarString"></span>
+        <input id="editCarButton" type="button" value="edit">
+    </div>
+    <svg id="mapSVG">
+    </svg>
+</div>
+<br>
+<div id="debug"></div>
+
+
+<div id="carEditor">
+    <h2 class="editor-header">Edit Vehicle</h2>
+    <div class="editor-content">
+
+        <!-- Vehicle Properties -->
+        <div class="param-group">
+            <h3>Vehicle Properties</h3>
+
+            <div class="param-item">
+                <label for="vehicleLength">Length (m)</label>
+                <div class="range-display">
+                    <input type="range" id="vehicleLength" min="3" max="8" step="0.1" value="4.5">
+                    <span id="vehicleLengthValue">4.5</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="vehicleWidth">Width (m)</label>
+                <div class="range-display">
+                    <input type="range" id="vehicleWidth" min="1.5" max="2.5" step="0.1" value="2.0">
+                    <span id="vehicleWidthValue">2.0</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="bodyColor">Body Color</label>
+                <input type="color" id="bodyColor" value="#4CAF50">
+            </div>
+        </div>
+
+        <!-- Driver Behavior -->
+        <div class="param-group">
+            <h3>Driver Behavior</h3>
+
+            <div class="param-item">
+                <label for="maxSpeed">Max Speed (m/s)</label>
+                <div class="range-display">
+                    <input type="range" id="maxSpeed" min="10" max="50" step="1" value="30">
+                    <span id="maxSpeedValue">30</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="tau">Following Time τ (seconds)</label>
+                <div class="range-display">
+                    <input type="range" id="tau" min="0.5" max="4.0" step="0.1" value="1.5">
+                    <span id="tauValue">1.5</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="maxAcceleration">Max Acceleration (m/s²)</label>
+                <div class="range-display">
+                    <input type="range" id="maxAcceleration" min="0.5" max="5.0" step="0.1" value="2.0">
+                    <span id="maxAccelerationValue">2.0</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="maxDeceleration">Max Deceleration (m/s²)</label>
+                <div class="range-display">
+                    <input type="range" id="maxDeceleration" min="1.0" max="8.0" step="0.1" value="4.0">
+                    <span id="maxDecelerationValue">4.0</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="overSpeedLimit">Over Speed Limit (m/s)</label>
+                <div class="range-display">
+                    <input type="range" id="overSpeedLimit" min="-5" max="10" step="0.5" value="2.0">
+                    <span id="overSpeedLimitValue">2.0</span>
+                </div>
+            </div>
+
+            <div class="param-item">
+                <label for="lookAhead">Look Ahead Distance (m)</label>
+                <div class="range-display">
+                    <input type="range" id="lookAhead" min="20" max="200" step="5" value="100">
+                    <span id="lookAheadValue">100</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor-buttons">
+        <button id="cancelCarEditButton"   class="btn btn-secondary" onclick="cancelCarEdit()">Cancel</button>
+        <button id="applyCarEditButton"  class="btn btn-primary" onclick="applyCarEdit()">Apply</button>
+    </div>
+</div>
+
+</body>
+
+<script type="module">
+    import * as TRAFFIC from "./traffic.js"
+
+    TRAFFIC.initialize();
+</script>
+
+</html>

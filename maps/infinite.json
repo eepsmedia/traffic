@@ -1,0 +1,33 @@
+{
+  "map": {
+    "name": "infinite straight road",
+    "nodes": {
+      "1": {
+        "x": 0,
+        "y": 0
+      },
+      "2": {
+        "x": 300,
+        "y": 300
+      },
+      "3": {
+        "x": 500,
+        "y": 0
+      }
+    },
+    "edges": {
+      "1": {
+        "from" : 1,
+        "to": 2,
+        "nLanes": 2,
+        "connectTo": 2
+      },
+      "2": {
+        "from" : 2,
+        "to": 1,
+        "nLanes": 2,
+        "connectTo": 1
+      }
+    }
+  }
+}
