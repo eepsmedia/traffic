@@ -1,15 +1,25 @@
 import * as TRAFFIC from "../traffic.js"
 
 export default class Edge {
-    constructor(iID, iX1, iY1, iX2, iY2, iLanes = 2, iToConnect = null) {
+    constructor(iID, iNodeFrom, iNodeTo, iJSONedge) {
         this.id = iID;
-        this.x1 = iX1;
-        this.y1 = iY1;
-        this.x2 = iX2;
-        this.y2 = iY2;
-        this.connectFrom = null;
-        this.connectTo = iToConnect;    //  if null, this is an end. id of an edge, todo: fix
+        if (this.id > Edge.maxID) {
+            Edge.maxID = this.id;
+        }
+
+        this.connectFrom = iNodeFrom;
+        this.connectTo = iNodeTo;    //  if null, this is an end. id of an edge, todo: fix
+        this.nLanes = iJSONedge.nLanes;
         this.laneWidth = TRAFFIC.constants.kDefaultLaneWidth;
+
+        this.lanes = [];
+        this.median = {};
+        this.shoulder = {};
+
+        this.x1 = this.connectFrom.x;   //  det coordinates from the Nodes
+        this.y1 = this.connectFrom.y;
+        this.x2 = this.connectTo.x;
+        this.y2 = this.connectTo.y;
 
         const dx = this.x2 - this.x1;
         const dy = this.y2 - this.y1;
@@ -17,32 +27,57 @@ export default class Edge {
         this.startAngle = Math.atan2(dy, dx);       //  radians, math convention
         this.length = Math.sqrt(dx * dx + dy * dy);
 
-        this.nLanes = iLanes;
+        //  useful constant
 
-        if (this.id > Edge.maxID) {
-            Edge.maxID = this.id;
+        const theta = (this.startAngle);
+
+        //      calculate widths and colors for the median and shoulder
+
+        this.shoulder.color = (iJSONedge.shoulderColor) ? iJSONedge.shoulderColor : TRAFFIC.constants.kDefaultShoulderColor;
+
+        if (iJSONedge.oneway) {
+            this.shoulder.width = (iJSONedge.shoulderWidth) ? iJSONedge.shoulderWidth : TRAFFIC.constants.kDefaultLaneWidth;
+            this.median.width = (iJSONedge.medianWidth) ? iJSONedge.medianWidth : TRAFFIC.constants.kDefaultLaneWidth;
+            this.median.color = (iJSONedge.medianColor) ? iJSONedge.medianColor : this.shoulder.color;
+        } else {
+            this.shoulder.width = (iJSONedge.shoulderWidth) ? iJSONedge.shoulderWidth : TRAFFIC.constants.kDefaultLaneWidth;
+            this.median.width = (iJSONedge.medianWidth) ? iJSONedge.medianWidth : TRAFFIC.constants.kDefaultMedianWidth;
+            this.median.color = (iJSONedge.medianColor) ? iJSONedge.medianColor : TRAFFIC.constants.kDefaultMedianColor;
         }
 
-        //  create the `lanes` member, which is an array of objects
+        //      lane color until we get a todo: lane class,
 
-        this.lanes = [];
-        const theta = (this.startAngle);
-        const w = TRAFFIC.constants.kDefaultLaneWidth;
 
         //  starting at lane 0
         for (let i = 0; i < this.nLanes; i++) {
-            const offset = (i + (1 / 2)) * this.laneWidth;
+            const offset = (i + (1 / 2)) * this.laneWidth + this.median.width;
 
             this.lanes.push({
                     speedLimit: TRAFFIC.constants.kDefaultSpeedLimit,
-                    laneWidth: this.laneWidth,
+                    laneWidth: this.laneWidth,      //  todo: convert to member `width`, i.e., lane.width
                     x1: this.x1 + offset * Math.sin(theta),   //  right π/2 from direction
                     y1: this.y1 - offset * Math.cos(theta),
                     x2: this.x2 + offset * Math.sin(theta),   //  right π/2 from direction
-                    y2: this.y2 - offset * Math.cos(theta)
+                    y2: this.y2 - offset * Math.cos(theta),
+                    color:  (iJSONedge.laneColor) ? iJSONedge.laneColor : TRAFFIC.constants.kDefaultLaneColor
                 }
             )
         }
+
+        //      do calculations for median and shoulder geometry
+
+        this.median.offset = (1 / 2) * this.median.width;
+        this.shoulder.offset = this.nLanes * this.laneWidth + this.median.width + (1 / 2) * this.shoulder.width;
+
+        this.median.x1 = this.x1 + this.median.offset * Math.sin(theta);
+        this.median.y1 = this.y1 - this.median.offset * Math.cos(theta);
+        this.median.x2 = this.x2 + this.median.offset * Math.sin(theta);
+        this.median.y2 = this.y2 - this.median.offset * Math.cos(theta);
+
+        this.shoulder.x1 = this.x1 + this.shoulder.offset * Math.sin(theta);
+        this.shoulder.y1 = this.y1 - this.shoulder.offset * Math.cos(theta);
+        this.shoulder.x2 = this.x2 + this.shoulder.offset * Math.sin(theta);
+        this.shoulder.y2 = this.y2 - this.shoulder.offset * Math.cos(theta);
 
     }
 
@@ -51,7 +86,7 @@ export default class Edge {
     getAllMyVehicles() {
         let out = [];
         TRAFFIC.theVehicles.forEach((v) => {
-            if (v.where.edge === this) {
+            if (v.where.edge.id === this.id) {
                 out.push(v);
             }
         })

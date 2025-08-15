@@ -21,15 +21,19 @@ export default class Driver {
 
     }
 
-    getAcceleration(dt) {
+    async getAcceleration(dt) {
         let acc = 0;
-        const sit = this.findNearestCar();
+        const sit = await this.findNearestCar();
 
         const speedLimitAcc = this.getSpeedLimitAcc(dt);   // null if at or over limit
         const tailgateAcc = this.getTailgateAcc(dt, sit);
         const matchSpeedsAcc = this.getMatchSpeedsAcc(dt, sit);
 
-        acc = tailgateAcc || matchSpeedsAcc || speedLimitAcc || 0;
+        const cautionAccelerations = [tailgateAcc, matchSpeedsAcc];
+        const cautionAcc = TRAFFIC.minIgnoringNulls(cautionAccelerations);
+
+
+        acc = cautionAcc || speedLimitAcc || 0;
 
         return acc;
     }
@@ -105,7 +109,7 @@ export default class Driver {
             change lanes.
      */
 
-    decideAboutLaneChange(dt) {
+    async decideAboutLaneChange(dt) {
         if (!this.changingLanes) {
             if (Math.random() < 0.1 * dt) {
                 const newLane = Math.floor(Math.random() * this.myCar.where.edge.nLanes);
@@ -123,15 +127,17 @@ export default class Driver {
      */
 
 
-    findNearestCar() {
+    async findNearestCar() {
         let nearestCar = null;
         let distance = Infinity;
 
+        //  get the two possible lane numbers, L1 and L2.
+        //  if we're not changing lanes, they will be the same.
         const loc = this.myCar.where;
         const L1 = Math.floor(loc.lane);
         const L2 = Math.ceil(loc.lane);
 
-        const survey = this.surveyNearbyCars();
+        const survey = await this.surveyNearbyCars();
 
         if (survey[L1] && survey[L1].veh) {
             nearestCar = survey[L1].veh;
@@ -149,7 +155,7 @@ export default class Driver {
     }
 
 
-    surveyNearbyCars() {
+    async surveyNearbyCars() {
         let nearestCarByLane = [];
         const loc = this.myCar.where;
 
@@ -169,34 +175,36 @@ export default class Driver {
         let theClosestVehicle = null;
         const startingX = iPos;
 
-        const carsInEdge = iEdge.getAllMyVehicles();    //
+        if (iEdge) {
+            const carsInEdge = iEdge.getAllMyVehicles();    //
 
-        carsInEdge.forEach(c => {
-            const carLane = c.where.lane;
-            if (iLane === Math.floor(carLane) || iLane === Math.ceil(carLane)) {
-                const carX = c.where.u;
-                const tDist = carX - startingX + iDistFromPreviousEdges;
-                if (tDist > 0 && tDist < distance) {
-                    distance = tDist;
-                    theClosestVehicle = c;
+            carsInEdge.forEach(c => {
+                const carLane = c.where.lane;
+                if (iLane === Math.floor(carLane) || iLane === Math.ceil(carLane)) {
+                    const carX = c.where.u;
+                    const tDist = carX - startingX + iDistFromPreviousEdges;
+                    if (tDist > 0 && tDist < distance) {
+                        distance = tDist;
+                        theClosestVehicle = c;
+                    }
                 }
-            }
-        })
+            })
 
-        if (theClosestVehicle) {
-            return {
-                veh: theClosestVehicle,
-                dist: distance
+            if (theClosestVehicle) {
+                return {
+                    veh: theClosestVehicle,
+                    dist: distance
+                }
+            } else {
+                iDistFromPreviousEdges += (iEdge.length - startingX);
             }
-        } else {
-            iDistFromPreviousEdges += (iEdge.length - startingX);
-        }
 
-        if (iEdge.connectTo) {
-            //  recurse
-            const nextEdge = TRAFFIC.getNextEdge(iEdge);
-            return this.findNextCarInLane(nextEdge, iLane, 0, iDistFromPreviousEdges);
-            //  todo: account for the case where the lane number changes
+            if (iEdge.connectTo) {
+                //  recurse
+                const nextEdge = TRAFFIC.getNextEdge(iEdge);
+                return this.findNextCarInLane(nextEdge, iLane, 0, iDistFromPreviousEdges);
+                //  todo: account for the case where the lane number changes
+            }
         }
 
         return null;

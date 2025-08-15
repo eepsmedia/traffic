@@ -4,6 +4,7 @@
 
 import Vehicle from "./models/Vehicle.js"
 import Edge from "./models/Edge.js"
+import Node from "./models/Node.js"
 import Location from "./models/Location.js"
 import * as MAPVIEW from "./views/mapView.js"
 import * as CAREDIITOR from "./carEditor.js"
@@ -27,7 +28,7 @@ export async function initialize() {
     document.getElementById('cancelCarEditButton').addEventListener('click', () => {CAREDIITOR.cancelCarEdit(focusCar);});
     document.getElementById('applyCarEditButton').addEventListener('click', () => {CAREDIITOR.applyCarEdit(focusCar);});
 
-    await loadMap("infinite");
+    await loadMap("test-map");
 
     MAPVIEW.initialize();
 
@@ -41,16 +42,19 @@ function spit(message) {
     spitoon.innerHTML = debugText;
 }
 
-function step(dt = 1.0) {
+async function step(dt = 1.0) {
 
-    theVehicles.forEach(c => c.step(dt));
+    const now = new Date();
+    await theVehicles.forEach(c => c.step(dt));
 
     when += dt;
 
-    theVehicles.forEach(c => c.setAcceleration(dt));
-    theVehicles.forEach(c => c.driver.decideAboutLaneChange(dt));
+    await theVehicles.forEach(c => c.setAcceleration(dt));
+    await theVehicles.forEach(c => c.driver.decideAboutLaneChange(dt));
 
     redraw();
+    const elapsed = new Date() - now;
+    console.log(`step took ${elapsed} ms`);
 }
 
 function redraw() {
@@ -94,8 +98,17 @@ function newCar() {
     const where = new Location(theEdge, 0, theLane);
     const me = new Vehicle(where, 0, 0);
     theVehicles.push(me);
+    me.where.u = me.length;
 
     redraw();
+}
+
+export function removeVehicleByID(iID) {
+    const index = theVehicles.findIndex(c => c.id === iID);
+    if (index >= 0) {
+        theVehicles.splice(index, 1);
+        console.log(`    #${iID} drove off the end`);
+    }
 }
 
 export function setFocusCar(event, iCar) {
@@ -107,6 +120,7 @@ export function setFocusCar(event, iCar) {
 
 export const constants = {
     kDefaultLaneWidth: 3.6,
+    kDefaultMedianWidth : 1.0,      //  for two-way roads, half-width!
     kDefaultSpeedLimit: 11, //      just under 25 mph
     kDefaultCarLength : 4.6,    //      VW ID.4
     kDefaultCarWidth : 1.9,      //      VW ID.4
@@ -118,8 +132,12 @@ export const constants = {
     kDefaultOverSpeedLimit : 2,     //      m/s
     kDefaultCoastAcceleration : -0.5,    //      m / s^2
     kDefaultDesiredSpeedZoneWidth : 1,  //  how many m/s above the desired speed is still OK
-    kDefaultBodyColor : "blue",
     kDefaultLaneChangeDuration : 3,
+
+    kDefaultBodyColor : "#5588cc",
+    kDefaultMedianColor : "#eeeeee",
+    kDefaultShoulderColor : "#338833",
+    kDefaultLaneColor : "#cccccc",
 
     kFocusBodyColor : "yellow",
     kEdgeThickness : 0.5,
@@ -129,8 +147,13 @@ export const constants = {
 }
 
 export function getNextEdge(iEdge)  {
-    const theIndex = iEdge.connectTo;
-    return theEdges[theIndex];
+    let outEdge = null;
+
+    const theConnectingNode = iEdge.connectTo;
+    if (theConnectingNode.outEdges.length > 0) {
+        outEdge = theConnectingNode.outEdges[0];
+    }
+    return outEdge;
 }
 
 async function loadMap(iMapFilename) {
@@ -155,28 +178,36 @@ async function loadMap(iMapFilename) {
     let nNodes = 0;
     let nEdges = 0;
 
+    //  convert to the "Node" class and give each Node an id key (`theNodes` is a dictionary with id keys and Nodes as values)
     for (let k in loadedMap.nodes) {
-        const n = loadedMap.nodes[k];
-        theNodes[k] = n;
+        const jsonNode = loadedMap.nodes[k];
+        theNodes[k] = new Node(k, jsonNode);
         nNodes++
     }
 
     //  convert to the "Edge" class and give each Edge an id key (`theEdges` is a dictionary with id keys and Edges as values)
     for (let k in loadedMap.edges) {
-        const e = loadedMap.edges[k];    //  one edge, k is the key
+        const JSONedge = loadedMap.edges[k];    //  one edge, k is the key
 
-        const from = theNodes[e.from];
-        const to = theNodes[e.to];
-        e.x1 = from.x;
-        e.y1 = from.y;
-        e.x2 = to.x;
-        e.y2 = to.y;
+        const from = theNodes[JSONedge.from];   //  a node
+        const to = theNodes[JSONedge.to];
 
-        const newEdge = new Edge(k, e.x1, e.y1, e.x2, e.y2, e.nLanes, e.connectTo);
+        const newEdge = new Edge(k, from, to, JSONedge);
         theEdges[k] = newEdge;
+        theNodes[JSONedge.to].inEdges.push(newEdge);
+        theNodes[JSONedge.from].outEdges.push(newEdge);
+
         nEdges++;
     }
 
     spit(`loaded ${nEdges} edges and ${nNodes} nodes.`);
+
+
 }
+
+export function minIgnoringNulls(values) {
+    const filtered = values.filter(v => v !== null);
+    return filtered.length > 0 ? Math.min(...filtered) : null;
+}
+
 

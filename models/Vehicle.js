@@ -30,7 +30,7 @@ export default class Vehicle {
 
     }
 
-    step(dt) {
+    async step(dt) {
         this.where.u += this.speed * dt + (1/2) * this.acceleration * dt * dt;
         this.speed += this.acceleration * dt;
 
@@ -38,10 +38,15 @@ export default class Vehicle {
         //  wrap around the edges
         while (this.where.u > this.where.edge.length) {
             const newEdge = TRAFFIC.getNextEdge(this.where.edge);
-            const leftover = this.where.u - this.where.edge.length;
-            this.where.edge = newEdge;
-            this.where.u = leftover;
-            console.log(`    #${this.id} moved to edge ${newEdge.id} with ${leftover.toFixed(1)} m left over.`);
+            if (newEdge) {
+                const leftover = this.where.u - this.where.edge.length;
+                this.where.edge = newEdge;
+                this.where.u = leftover;
+                console.log(`    #${this.id} moved to edge ${newEdge.id} with ${leftover.toFixed(1)} m left over.`);
+            } else {
+                TRAFFIC.removeVehicleByID(this.id);
+                return;     //  don't do any more processing!
+            }
         }
 
         //  do lane changing
@@ -78,8 +83,8 @@ export default class Vehicle {
      *
      * @return {void} This method does not return a value.
      */
-    setAcceleration(dt) {
-        this.acceleration = this.driver.getAcceleration(dt);
+    async setAcceleration(dt) {
+        this.acceleration = await this.driver.getAcceleration(dt);
 
         if (this.speed + this.acceleration * dt < 0) {
             this.acceleration = -this.speed / dt;    //  stop, don't go backwards!
@@ -96,7 +101,7 @@ export default class Vehicle {
     }
 
     xyTheta() {
-        const offset = (this.where.lane + (1/2)) * this.where.edge.laneWidth;
+        const offset = (this.where.lane + (1/2)) * this.where.edge.laneWidth + this.where.edge.median.width;
         let pos =  this.where.edge.getXYTheta(this.where.u);
         pos.x = pos.x + offset * Math.sin(pos.theta);
         pos.y = pos.y - offset * Math.cos(pos.theta);

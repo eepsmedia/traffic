@@ -21,7 +21,7 @@ export function initialize() {
 
 
 export function draw() {
-    drawRoads(TRAFFIC.theEdges);    //  todo: coming!
+    drawRoads(TRAFFIC.theEdges);
     drawEdges(TRAFFIC.theEdges);
     drawCars(TRAFFIC.theVehicles);
 }
@@ -64,6 +64,17 @@ function drawRoads(iEdges) {
         .join("g")
         .attr("class", "road")
 
+    roads.selectAll(".median")
+        .data((e) => [e.median])
+        .join("line")
+        .attr("x1", m => m.x1)
+        .attr("y1", m => m.y1)
+        .attr("x2", m => m.x2)
+        .attr("y2", m => m.y2)
+        .attr("stroke", m => m.color)
+        .attr("stroke-width", m => m.width )
+        .attr("class", "median")
+
     roads.selectAll(".lane")
         .data((e) => e.lanes)
         .join("line")
@@ -71,9 +82,22 @@ function drawRoads(iEdges) {
         .attr("y1", lane => lane.y1)
         .attr("x2", lane => lane.x2)
         .attr("y2", lane => lane.y2)
-        .attr("stroke", "lightgray")
+        .attr("stroke", lane => lane.color)
         .attr("stroke-width", lane => lane.laneWidth )
         .attr("class", "lane")
+
+    roads.selectAll(".shoulder")
+        .data((e) => [e.shoulder])
+        .join("line")
+        .attr("x1", sh => sh.x1)
+        .attr("y1", sh => sh.y1)
+        .attr("x2", sh => sh.x2)
+        .attr("y2", sh => sh.y2)
+        .attr("stroke", sh => sh.color)
+        .attr("stroke-width", sh => sh.width )
+        .attr("class", "median")
+
+
 }
 
 function drawCars(iVehicles) {

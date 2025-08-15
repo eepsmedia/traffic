@@ -1,0 +1,50 @@
+{
+  "map": {
+    "name": "test map",
+    "nodes": {
+      "1": {
+        "x": 0,
+        "y": 0
+      },
+      "2": {
+        "x": 0,
+        "y": 300
+      },
+      "3": {
+        "x": 300,
+        "y": 300
+      },
+      "4": {
+        "x": 300,
+        "y": 0
+      }
+    },
+    "edges": {
+      "1": {
+        "from" : 1,
+        "to": 2,
+        "nLanes": 2,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "2": {
+        "from" : 2,
+        "to": 3,
+        "nLanes": 2,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null,
+        "shoulderColor" : "#886644"
+      },
+      "3": {
+        "from" : 3,
+        "to": 4,
+        "nLanes": 2,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      }
+    }
+  }
+}
