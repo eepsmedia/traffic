@@ -32,13 +32,18 @@ function drawNodes(iNodes) {
     const aNodes = Object.values(iNodes);
 
     const nodes = zoomContainer.selectAll(".node")
-        .data(aNodes, (node) => node.id)
+        .data(aNodes, (n) => n.id)
+        .join("g")
+        .attr("class", "node")
+
+    nodes.selectAll(".nodeCircle")
+        .data((node) => [node])
         .join("circle")
         .attr("cx", node => node.x)
         .attr("cy", node => node.y)
         .attr("r", TRAFFIC.constants.kNodeRadius / zoomScale)
         .attr("fill", "red")
-        .attr("class", "node")
+        .attr("class", "nodeCircle")
 
 }
 
@@ -78,7 +83,7 @@ function drawRoads(iEdges) {
         .attr("x2", m => m.x2)
         .attr("y2", m => m.y2)
         .attr("stroke", m => m.color)
-        .attr("stroke-width", m => m.width )
+        .attr("stroke-width", m => m.width)
         .attr("class", "median")
 
     roads.selectAll(".lane")
@@ -89,7 +94,7 @@ function drawRoads(iEdges) {
         .attr("x2", lane => lane.x2)
         .attr("y2", lane => lane.y2)
         .attr("stroke", lane => lane.color)
-        .attr("stroke-width", lane => lane.laneWidth )
+        .attr("stroke-width", lane => lane.width)
         .attr("class", "lane")
 
     roads.selectAll(".shoulder")
@@ -100,7 +105,7 @@ function drawRoads(iEdges) {
         .attr("x2", sh => sh.x2)
         .attr("y2", sh => sh.y2)
         .attr("stroke", sh => sh.color)
-        .attr("stroke-width", sh => sh.width )
+        .attr("stroke-width", sh => sh.width)
         .attr("class", "median")
 
 
@@ -139,7 +144,6 @@ function drawCars(iVehicles) {
             return (c.isFocusCar()) ? TRAFFIC.constants.kFocusBodyColor : c.bodyColor;
         })
         .attr("class", "carBody")
-
 
 
     //  draw a dot

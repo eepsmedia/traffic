@@ -1,12 +1,7 @@
 export default class Location {
 
-    constructor(iEdge, iPos = 0, iLane = 0) {
-        this.edge = iEdge;
+    constructor(iLane, iPos = 0) {
         this.lane = iLane;
         this.u = iPos;
-    }
-
-    speedLimit() {
-        return this.edge.speedLimit(this.lane);     //  lanes have speed limits
     }
 }

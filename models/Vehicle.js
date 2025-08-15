@@ -20,8 +20,9 @@ export default class Vehicle {
 
         //  lane-changing
         this.changingLanes = false;
-        this.laneFrom = null;
-        this.laneTo = null;
+        this.laneFromNumber = null;
+        this.laneToNumber = null;
+        this.effectiveLaneNumber = iLoc.lane.laneNumber;
 
         //  vehicle properties
         this.length = TRAFFIC.constants.kDefaultCarLength;
@@ -34,15 +35,16 @@ export default class Vehicle {
         this.where.u += this.speed * dt + (1/2) * this.acceleration * dt * dt;
         this.speed += this.acceleration * dt;
 
+        const myLane = this.where.lane;
 
         //  wrap around the edges
-        while (this.where.u > this.where.edge.length) {
-            const newEdge = TRAFFIC.getNextEdge(this.where.edge);
-            if (newEdge) {
-                const leftover = this.where.u - this.where.edge.length;
-                this.where.edge = newEdge;
+        while (this.where.u > myLane.length) {
+            const newLane = TRAFFIC.getNextLane(myLane);  //  todo: change to lane
+            if (newLane) {
+                const leftover = this.where.u - myLane.length;
+                this.where.lane = newLane;
                 this.where.u = leftover;
-                console.log(`    #${this.id} moved to edge ${newEdge.id} with ${leftover.toFixed(1)} m left over.`);
+                console.log(`    #${this.id} moved to lane ${newLane.id} with ${leftover.toFixed(1)} m left over.`);
             } else {
                 TRAFFIC.removeVehicleByID(this.id);
                 return;     //  don't do any more processing!
@@ -51,13 +53,14 @@ export default class Vehicle {
 
         //  do lane changing
         if (this.changingLanes) {
-            const dLane = (this.laneTo - this.laneFrom) * dt / this.driver.laneChangeDuration;
-            this.where.lane += dLane;
-            if (Math.abs(this.where.lane - this.laneFrom) > (1 - dLane + Number.EPSILON)) {
+
+            const dLane = (this.laneToNumber - this.laneFromNumber) * dt / this.driver.laneChangeDuration;
+            this.effectiveLaneNumber += dLane;
+            if (Math.abs(this.effectiveLaneNumber - this.laneFromNumber) >= (1 - Number.EPSILON)) {
                 this.finishLaneChange()
             }
-            if (this.where.lane < 0) {
-                console.log(`    #${this.id} lane out of bounds to ${this.where.lane} for ${this.laneTo}: finished lane change to zero`);
+            if (this.effectiveLaneNumber < 0) {
+                console.log(`    #${this.id} lane out of bounds to ${this.effectiveLaneNumber} heading for ${this.laneToNumber}: finished lane change to zero`);
                 this.finishLaneChange();
             }
         }
@@ -66,15 +69,19 @@ export default class Vehicle {
 
 
     startLaneChange(laneTo) {
-        this.laneTo = laneTo;
-        this.laneFrom = this.where.lane;
+        this.laneToNumber = laneTo;
+        this.laneFromNumber = this.where.lane.laneNumber;
+        this.effectiveLaneNumber = this.where.lane.laneNumber;
         this.changingLanes = true;
     }
 
     finishLaneChange() {
-        this.where.lane = this.laneTo;
-        this.laneTo = null;
-        this.laneFrom = null;
+        this.where.lane = this.where.lane.edge.lanes[this.laneToNumber];
+        this.where.lane.laneNumber = this.laneToNumber;
+
+        this.effectiveLaneNumber = this.where.lane.laneNumber;
+        this.laneToNumber = null;
+        this.laneFromNumber = null;
         this.changingLanes = false;
     }
 
@@ -91,6 +98,12 @@ export default class Vehicle {
         }
     }
 
+    speedLimit() {
+        return this.where.lane.edge.speedLimit(this.effectiveLaneNumber);
+        //  return this.where.lane.speedLimit;  //  todo: change to include other lane we're in if changing lanes
+    }
+
+
     isFocusCar() {
         return this === TRAFFIC.focusCar;
     }
@@ -101,10 +114,8 @@ export default class Vehicle {
     }
 
     xyTheta() {
-        const offset = (this.where.lane + (1/2)) * this.where.edge.laneWidth + this.where.edge.median.width;
-        let pos =  this.where.edge.getXYTheta(this.where.u);
-        pos.x = pos.x + offset * Math.sin(pos.theta);
-        pos.y = pos.y - offset * Math.cos(pos.theta);
+        const theEdge = this.where.lane.edge;
+        let pos =  theEdge.xyTheta(this.where.u, this.effectiveLaneNumber);
         return pos;
     }
 

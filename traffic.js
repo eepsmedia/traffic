@@ -5,6 +5,7 @@
 import Vehicle from "./models/Vehicle.js"
 import Edge from "./models/Edge.js"
 import Node from "./models/Node.js"
+import Port from "./models/Port.js"
 import Location from "./models/Location.js"
 import * as MAPVIEW from "./views/mapView.js"
 import * as CAREDIITOR from "./carEditor.js"
@@ -76,7 +77,9 @@ function displayCarsTable() {
 
     theVehicles.forEach(c => {
         const focusP = c.isFocusCar() ? "*" : "";
-        out += `<tr><td>${c.id}${focusP}</td><td>${c.where.edge.id}</td><td>${c.where.lane.toFixed(1)}</td><td>${c.where.u.toFixed(2)}</td><td>${c.speed.toFixed(2)}</td><td>${c.acceleration.toFixed(2)}</td></tr>`;
+        const laneNum = (c.effectiveLaneNumber).toFixed(1);
+
+        out += `<tr><td>${c.id}${focusP}</td><td>${c.where.lane.edge.id}</td><td>${laneNum}</td><td>${c.where.u.toFixed(2)}</td><td>${c.speed.toFixed(2)}</td><td>${c.acceleration.toFixed(2)}</td></tr>`;
         //  spit(`&emsp;&emsp;&emsp;&emsp;E ${c.where.edge.id} L ${c.where.lane} ${c.where.u.toFixed(2)} ${c.speed.toFixed(2)} ${c.acceleration.toFixed(2)}`);
     })
 
@@ -94,8 +97,9 @@ function displayFocusCarData() {
 
 function newCar() {
     const theEdge = theEdges[1];
-    const theLane = theEdge.nLanes - 1;     //  right lane
-    const where = new Location(theEdge, 0, theLane);
+    const theLaneNumber = theEdge.nLanes - 1;     //  right lane
+    const theLane = theEdge.lanes[theLaneNumber];
+    const where = new Location(theLane, 0);
     const me = new Vehicle(where, 0, 0);
     theVehicles.push(me);
     me.where.u = me.length;
@@ -163,6 +167,20 @@ export function getNextEdge(iEdge)  {
     return outEdge;
 }
 
+export function getNextLane(iLane) {
+    let outLane = null;
+    let theEdge = iLane.edge;
+
+    // todo: change so we connect through the node rather than the edge
+
+    const theConnectingNode = theEdge.connectTo;
+    if (theConnectingNode.outEdges.length > 0) {
+        outLane = theConnectingNode.outEdges[0].lanes[iLane.laneNumber];
+    }
+    return outLane;
+
+}
+
 async function loadMap(iMapFilename) {
     let theFileName = `maps/${iMapFilename}.json`;
     //  this.fileNameMap[iLang];
@@ -199,7 +217,7 @@ async function loadMap(iMapFilename) {
         const from = theNodes[JSONedge.from];   //  a node
         const to = theNodes[JSONedge.to];
 
-        const newEdge = new Edge(k, from, to, JSONedge);
+        const newEdge = new Edge(k, from, to, JSONedge);    //  also creates lanes
         theEdges[k] = newEdge;
         theNodes[JSONedge.to].inEdges.push(newEdge);
         theNodes[JSONedge.from].outEdges.push(newEdge);
@@ -207,10 +225,26 @@ async function loadMap(iMapFilename) {
         nEdges++;
     }
 
+    for (let k in theNodes)  {
+        let node = theNodes[k];
+
+        node.inEdges.forEach(edge => {
+            edge.lanes.forEach(lane => {
+                node.ports.push(new Port(node, lane, "in"));
+            });
+        });
+
+        node.outEdges.forEach(edge => {
+            edge.lanes.forEach(lane => {
+                node.ports.push(new Port(node, lane, "out"));
+            });
+        });
+
+    }
+
     spit(`loaded ${nEdges} edges and ${nNodes} nodes.`);
-
-
 }
+
 
 export function minIgnoringNulls(values) {
     const filtered = values.filter(v => v !== null);

@@ -43,7 +43,7 @@ export default class Driver {
         const my = this;
         const myCar = this.myCar;
         
-        const speedLimit = myCar.where.edge.speedLimit(myCar.where.lane);
+        const speedLimit = myCar.speedLimit();
 
         //  accelerate to the speed limit if nothing else is happening
 
@@ -107,15 +107,17 @@ export default class Driver {
     /*
             In this section, we have methods for deciding whether to
             change lanes.
+
+            todo: actually implement reasons
      */
 
     async decideAboutLaneChange(dt) {
         if (!this.changingLanes) {
             if (Math.random() < 0.1 * dt) {
-                const newLane = Math.floor(Math.random() * this.myCar.where.edge.nLanes);
-                if (newLane !== this.myCar.where.lane) {
-                    console.log(`    #${this.myCar.id} decided to change lanes to ${newLane}`);
-                    this.myCar.startLaneChange(newLane);
+                const newLaneNumber = Math.floor(Math.random() * this.myCar.where.lane.edge.nLanes);
+                if (newLaneNumber !== this.myCar.where.lane.laneNumber) {
+                    console.log(`    #${this.myCar.id} decided to change lanes to ${newLaneNumber}`);
+                    this.myCar.startLaneChange(newLaneNumber);
                 }
             }
         }
@@ -134,8 +136,8 @@ export default class Driver {
         //  get the two possible lane numbers, L1 and L2.
         //  if we're not changing lanes, they will be the same.
         const loc = this.myCar.where;
-        const L1 = Math.floor(loc.lane);
-        const L2 = Math.ceil(loc.lane);
+        const L1 = Math.floor(loc.lane.laneNumber);
+        const L2 = Math.ceil(loc.lane.laneNumber);
 
         const survey = await this.surveyNearbyCars();
 
@@ -158,15 +160,17 @@ export default class Driver {
     async surveyNearbyCars() {
         let nearestCarByLane = [];
         const loc = this.myCar.where;
+        const theEdge = loc.lane.edge;
 
-        for (let L = 0; L < loc.edge.nLanes; L++) {
-            nearestCarByLane[L] = this.findNextCarInLane(loc.edge, L, loc.u, 0);
+        for (let L = 0; L < theEdge.nLanes; L++) {
+            const thisLane = theEdge.lanes[L];
+            nearestCarByLane[L] = this.findNextCarInLane(thisLane, loc.u, 0);
         }
 
         return nearestCarByLane;
     }
 
-    findNextCarInLane(iEdge, iLane, iPos, iDistFromPreviousEdges = 0) {
+    findNextCarInLane(iLane, iPos, iDistFromPreviousEdges = 0) {
         if (iDistFromPreviousEdges > this.lookAhead) {
             return null;        //  too far ahead, we don't care!
         }
@@ -175,12 +179,14 @@ export default class Driver {
         let theClosestVehicle = null;
         const startingX = iPos;
 
-        if (iEdge) {
-            const carsInEdge = iEdge.getAllMyVehicles();    //
+        if (iLane) {
+            const carsInEdge = iLane.edge.getAllMyVehicles();    //
 
             carsInEdge.forEach(c => {
                 const carLane = c.where.lane;
-                if (iLane === Math.floor(carLane) || iLane === Math.ceil(carLane)) {
+                const thisLaneNumber = iLane.laneNumber;
+                const thatLaneNumber = carLane.laneNumber;
+                if (Math.abs(thisLaneNumber - thatLaneNumber) < 0.95) {     //      couls be 1, but...
                     const carX = c.where.u;
                     const tDist = carX - startingX + iDistFromPreviousEdges;
                     if (tDist > 0 && tDist < distance) {
@@ -196,13 +202,16 @@ export default class Driver {
                     dist: distance
                 }
             } else {
-                iDistFromPreviousEdges += (iEdge.length - startingX);
+                iDistFromPreviousEdges += (iLane.length - startingX);
             }
 
-            if (iEdge.connectTo) {
+            //      todo: fix to use actual lane connections rather than edges
+
+            if (iLane.edge.connectTo) {
                 //  recurse
-                const nextEdge = TRAFFIC.getNextEdge(iEdge);
-                return this.findNextCarInLane(nextEdge, iLane, 0, iDistFromPreviousEdges);
+                //  const nextEdge = TRAFFIC.getNextEdge(iEdge);
+                const nextLane = TRAFFIC.getNextLane(iLane);
+                return this.findNextCarInLane(nextLane, 0, iDistFromPreviousEdges);
                 //  todo: account for the case where the lane number changes
             }
         }

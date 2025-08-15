@@ -7,16 +7,16 @@
         "y": 0
       },
       "2": {
-        "x": 0,
-        "y": 300
+        "x": 200,
+        "y": 0
       },
       "3": {
-        "x": 300,
+        "x": 200,
         "y": 300
       },
       "4": {
-        "x": 300,
-        "y": 0
+        "x": 400,
+        "y": 300
       }
     },
     "edges": {
@@ -32,6 +32,7 @@
         "from" : 2,
         "to": 3,
         "nLanes": 2,
+        "edgeSpeedLimit" : 15,
         "oneway": true,
         "shoulder" : null,
         "median" : null,

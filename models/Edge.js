@@ -1,4 +1,6 @@
 import * as TRAFFIC from "../traffic.js"
+import * as LANES from "./Lane.js"
+import Lane from "./Lane.js";
 
 export default class Edge {
     constructor(iID, iNodeFrom, iNodeTo, iJSONedge) {
@@ -7,10 +9,13 @@ export default class Edge {
             Edge.maxID = this.id;
         }
 
+        this.edgeSpeedLimit = iJSONedge.edgeSpeedLimit ?  iJSONedge.edgeSpeedLimit : null;
+
         this.connectFrom = iNodeFrom;
         this.connectTo = iNodeTo;    //  if null, this is an end. id of an edge, todo: fix
         this.nLanes = iJSONedge.nLanes;
-        this.laneWidth = TRAFFIC.constants.kDefaultLaneWidth;
+        this.laneWidth = iJSONedge.laneWidth ?  iJSONedge.laneWidth :  TRAFFIC.constants.kDefaultLaneWidth;
+        this.laneColor = iJSONedge.laneColor ?  iJSONedge.laneColor :  TRAFFIC.constants.kDefaultLaneColor;
 
         this.lanes = [];
         this.median = {};
@@ -25,7 +30,11 @@ export default class Edge {
         const dy = this.y2 - this.y1;
 
         this.startAngle = Math.atan2(dy, dx);       //  radians, math convention
+        this.endAngle = Math.atan2(dy, dx);       //  radians, math convention
         this.length = Math.sqrt(dx * dx + dy * dy);
+
+        this.startUnitVector = {x: dx / this.length, y: dy / this.length};
+        this.endUnitVector = {x: dx / this.length, y: dy / this.length};
 
         //  useful constant
 
@@ -45,26 +54,8 @@ export default class Edge {
             this.median.color = (iJSONedge.medianColor) ? iJSONedge.medianColor : TRAFFIC.constants.kDefaultMedianColor;
         }
 
-        //      lane color until we get a todo: lane class,
-
-
-        //  starting at lane 0
-        for (let i = 0; i < this.nLanes; i++) {
-            const offset = (i + (1 / 2)) * this.laneWidth + this.median.width;
-
-            this.lanes.push({
-                    speedLimit: TRAFFIC.constants.kDefaultSpeedLimit,
-                    laneWidth: this.laneWidth,      //  todo: convert to member `width`, i.e., lane.width
-                    x1: this.x1 + offset * Math.sin(theta),   //  right π/2 from direction
-                    y1: this.y1 - offset * Math.cos(theta),
-                    x2: this.x2 + offset * Math.sin(theta),   //  right π/2 from direction
-                    y2: this.y2 - offset * Math.cos(theta),
-                    color:  (iJSONedge.laneColor) ? iJSONedge.laneColor : TRAFFIC.constants.kDefaultLaneColor
-                }
-            )
-        }
-
         //      do calculations for median and shoulder geometry
+        //      do these before lanes because we need the median offset
 
         this.median.offset = (1 / 2) * this.median.width;
         this.shoulder.offset = this.nLanes * this.laneWidth + this.median.width + (1 / 2) * this.shoulder.width;
@@ -79,49 +70,52 @@ export default class Edge {
         this.shoulder.x2 = this.x2 + this.shoulder.offset * Math.sin(theta);
         this.shoulder.y2 = this.y2 - this.shoulder.offset * Math.cos(theta);
 
+
+        //  starting at lane 0
+        for (let i = 0; i < this.nLanes; i++) {
+            const newLane = new Lane(i, this);
+            this.lanes.push(newLane);
+        }
+
+
     }
 
     static maxID = 0;
 
+    getLaneOffset(eLane) {
+        const offset = this.median.width + (eLane + 1/2) * this.laneWidth;
+        return offset;
+    }
+
     getAllMyVehicles() {
         let out = [];
         TRAFFIC.theVehicles.forEach((v) => {
-            if (v.where.edge.id === this.id) {
+            if (v.where.lane.edge.id === this.id) {
                 out.push(v);
             }
         })
         return out;
     }
 
-    getXYTheta(u) {
-        const theta = this.startAngle
-        const x = this.x1 + u * Math.cos(theta);
-        const y = this.y1 + u * Math.sin(theta);
-        return {x, y, theta};
-    }
-
-    speedLimit(iLane) {
-        const laneA = Math.floor(iLane);
-        const laneB = Math.ceil(iLane);
+    speedLimit(iLaneNumber) {
+        const laneA = Math.floor(iLaneNumber);
+        const laneB = Math.ceil(iLaneNumber);
         if (laneA >= 0 && laneB >= 0) {
             if (laneA < this.nLanes && laneB < this.nLanes) {
                 return Math.min(this.lanes[laneA].speedLimit, this.lanes[laneB].speedLimit);
             }
         } else {
-            console.log(`Error: lane index out of bounds: ${iLane.toFixed(2)}`);
+            console.log(`Error: lane index out of bounds: ${iLaneNumber.toFixed(2)}`);
             return this.lanes[0].speedLimit;
         }
         return 1;
     }
 
-    setSpeedLimit(iSL) {
-        this.speedLimit = iSL;
-
-        for (let i = 0; i < this.nLanes; i++) {
-            this.lanes.push({
-                    speedLimit: this.speedLimit,
-                }
-            )
-        }
+    xyTheta(u, eLane) {
+        const offset = this.getLaneOffset(eLane);
+        const theta = this.startAngle;
+        const x = this.x1 + u * Math.cos(theta) + offset * Math.sin(theta);
+        const y = this.y1 + u * Math.sin(theta) - offset * Math.cos(theta);
+        return {x, y, theta};
     }
 }
