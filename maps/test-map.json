@@ -35,7 +35,7 @@
         "oneway": true,
         "shoulder" : null,
         "median" : null,
-        "shoulderColor" : "#886644"
+        "shoulderColor" : null
       },
       "3": {
         "from" : 3,

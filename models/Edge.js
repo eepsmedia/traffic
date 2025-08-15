@@ -36,11 +36,11 @@ export default class Edge {
         this.shoulder.color = (iJSONedge.shoulderColor) ? iJSONedge.shoulderColor : TRAFFIC.constants.kDefaultShoulderColor;
 
         if (iJSONedge.oneway) {
-            this.shoulder.width = (iJSONedge.shoulderWidth) ? iJSONedge.shoulderWidth : TRAFFIC.constants.kDefaultLaneWidth;
-            this.median.width = (iJSONedge.medianWidth) ? iJSONedge.medianWidth : TRAFFIC.constants.kDefaultLaneWidth;
+            this.shoulder.width = (iJSONedge.shoulderWidth) ? iJSONedge.shoulderWidth : TRAFFIC.constants.kDefaultShoulderWidth;
+            this.median.width = (iJSONedge.medianWidth) ? iJSONedge.medianWidth : TRAFFIC.constants.kDefaultShoulderWidth;
             this.median.color = (iJSONedge.medianColor) ? iJSONedge.medianColor : this.shoulder.color;
         } else {
-            this.shoulder.width = (iJSONedge.shoulderWidth) ? iJSONedge.shoulderWidth : TRAFFIC.constants.kDefaultLaneWidth;
+            this.shoulder.width = (iJSONedge.shoulderWidth) ? iJSONedge.shoulderWidth : TRAFFIC.constants.kDefaultShoulderWidth;
             this.median.width = (iJSONedge.medianWidth) ? iJSONedge.medianWidth : TRAFFIC.constants.kDefaultMedianWidth;
             this.median.color = (iJSONedge.medianColor) ? iJSONedge.medianColor : TRAFFIC.constants.kDefaultMedianColor;
         }

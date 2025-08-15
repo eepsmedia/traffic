@@ -23,10 +23,25 @@ export function initialize() {
 export function draw() {
     drawRoads(TRAFFIC.theEdges);
     drawEdges(TRAFFIC.theEdges);
+    drawNodes(TRAFFIC.theNodes);
     drawCars(TRAFFIC.theVehicles);
 }
 
 // Modified drawEdges to use zoomContainer
+function drawNodes(iNodes) {
+    const aNodes = Object.values(iNodes);
+
+    const nodes = zoomContainer.selectAll(".node")
+        .data(aNodes, (node) => node.id)
+        .join("circle")
+        .attr("cx", node => node.x)
+        .attr("cy", node => node.y)
+        .attr("r", TRAFFIC.constants.kNodeRadius / zoomScale)
+        .attr("fill", "red")
+        .attr("class", "node")
+
+}
+
 function drawEdges(iEdges) {
     const aEdges = Object.values(iEdges);
 
@@ -45,15 +60,6 @@ function drawEdges(iEdges) {
         .attr("stroke", "red")
         .attr("stroke-width", TRAFFIC.constants.kEdgeThickness / zoomScale)
         .attr("class", "edgeCenterline")
-
-    edges.selectAll(".edgeStartBulb")
-        .data((e) => [e])
-        .join("circle")
-        .attr("cx", e => e.x1)
-        .attr("cy", e => e.y1)
-        .attr("r", 4 / zoomScale)
-        .attr("fill", "red")
-        .attr("class", "edgeStartBulb")
 }
 
 function drawRoads(iEdges) {

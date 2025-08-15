@@ -119,11 +119,8 @@ export function setFocusCar(event, iCar) {
 
 
 export const constants = {
-    kDefaultLaneWidth: 3.6,
-    kDefaultMedianWidth : 1.0,      //  for two-way roads, half-width!
-    kDefaultSpeedLimit: 11, //      just under 25 mph
-    kDefaultCarLength : 4.6,    //      VW ID.4
-    kDefaultCarWidth : 1.9,      //      VW ID.4
+
+    //  behavior
     kDefaultLookAhead : 300,    //      m
     kDefaultTau : 3,    //      s, for following distance
     kDefaultMaxSpeed : 120,     //      mph
@@ -134,16 +131,26 @@ export const constants = {
     kDefaultDesiredSpeedZoneWidth : 1,  //  how many m/s above the desired speed is still OK
     kDefaultLaneChangeDuration : 3,
 
-    kDefaultBodyColor : "#5588cc",
+    //  lanes
+    kDefaultSpeedLimit: 11, //      just under 25 mph
+    kDefaultLaneWidth: 3.6,
+    kDefaultMedianWidth : 1.0,      //  for two-way roads, half-width!
+    kDefaultShoulderWidth : 2.5,      //  parking area
     kDefaultMedianColor : "#eeeeee",
     kDefaultShoulderColor : "#338833",
     kDefaultLaneColor : "#cccccc",
 
-    kFocusBodyColor : "yellow",
-    kEdgeThickness : 0.5,
-    kEdgeBulbRadius : 3,
+    //cars
+    kDefaultCarLength : 4.6,    //      VW ID.4
+    kDefaultCarWidth : 1.9,      //      VW ID.4
+    kDefaultBodyColor : "#5588cc",
+    kFocusBodyColor : "#00ffff",
     kHeadlightRadius : 0.35,
-    kHeadlightColor : "white",
+    kHeadlightColor : "#ffffff",
+
+    //  edge display
+    kEdgeThickness : 0.5,
+    kNodeRadius : 3,
 }
 
 export function getNextEdge(iEdge)  {
