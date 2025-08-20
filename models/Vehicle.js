@@ -37,11 +37,12 @@ export default class Vehicle {
 
         const myLane = this.where.lane;
 
-        //  wrap around the edges
-        while (this.where.u > myLane.length) {
-            const newLane = TRAFFIC.getNextLane(myLane);  //  todo: change to lane
+        //  wrap to the next lane
+        while (this.where.u > myLane.myVector.length) {
+            const newLane = TRAFFIC.getNextLane(myLane);
             if (newLane) {
-                const leftover = this.where.u - myLane.length;
+                if (this.changingLanes) this.finishLaneChange();    //  todo: kludge alert! really we shouldn't start a change if we can't finish it before a junction
+                const leftover = this.where.u - myLane.myVector.length;
                 this.where.lane = newLane;
                 this.where.u = leftover;
                 console.log(`    #${this.id} moved to lane ${newLane.id} with ${leftover.toFixed(1)} m left over.`);
@@ -98,24 +99,34 @@ export default class Vehicle {
         }
     }
 
-    speedLimit() {
-        return this.where.lane.edge.speedLimit(this.effectiveLaneNumber);
-        //  return this.where.lane.speedLimit;  //  todo: change to include other lane we're in if changing lanes
+    angle() {
+        return this.where.lane.angle(this.where.u);
     }
 
+    speedLimit() {
+        return this.where.lane.speedLimit;  //  todo: fix for case where we're changing lanes.
+    }
 
+    getTableLine() {
+        const focusP = this.isFocusCar() ? "*" : "";
+        const laneNum = (this.effectiveLaneNumber).toFixed(1);
+
+        let out = `<tr><td>${this.id}${focusP}</td><td>${this.where.lane.id}</td></td><td>${laneNum}</td>`
+            out += `<td>${this.where.u.toFixed(2)}</td><td>${this.speed.toFixed(2)}</td><td>${this.acceleration.toFixed(2)}</td></tr>`
+
+        return out;
+    }
     isFocusCar() {
         return this === TRAFFIC.focusCar;
     }
 
     getFocusString() {
-        const edgeData = `loc ${this.where.edge.id}-${this.where.lane.toFixed(1)}-${this.where.u.toFixed(2)}`;
-        return `id: ${this.id} ${edgeData} speed: ${this.speed.toFixed(1)} acc: ${this.acceleration.toFixed(1)}`;
+        const laneData = ` ${this.where.lane.id}-${this.where.u.toFixed(2)} EL#${this.effectiveLaneNumber.toFixed(1)}`;
+        return `id: ${this.id} ${laneData} speed: ${this.speed.toFixed(1)} acc: ${this.acceleration.toFixed(1)}`;
     }
 
-    xyTheta() {
-        const theEdge = this.where.lane.edge;
-        let pos =  theEdge.xyTheta(this.where.u, this.effectiveLaneNumber);
+    uVector() {
+        let pos =  this.where.lane.uVector(this.where.u, this.effectiveLaneNumber);
         return pos;
     }
 

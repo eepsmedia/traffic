@@ -3,49 +3,105 @@ import * as EDGE from "./Edge.js"
 
 
 export default class Lane {
-    static  MaxID = 1;
 
-    constructor(iLaneNumber, iEdge) {
-        this.id = iEdge.id * 1000 + iLaneNumber;
-        if (this.id > Lane.MaxID) {
-            Lane.MaxID = this.id;
-        }
+    constructor(iLaneNumber) {
 
         this.laneNumber = iLaneNumber;
-        this.edge = iEdge;
-        this.offset = iEdge.getLaneOffset(iLaneNumber);
-
-        this.startAngle = iEdge.startAngle;
-        this.endAngle = iEdge.endAngle;
-        this.speedLimit = iEdge.edgeSpeedLimit ?  iEdge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
-        this.width = iEdge.laneWidth ? iEdge.laneWidth : TRAFFIC.constants.kDefaultLaneWidth;
-        this.color = (iEdge.laneColor) ? iEdge.laneColor : TRAFFIC.constants.kDefaultLaneColor
-
-        this.getCoordinates();
     }
 
+    static fromEdge(iEdge, iLaneNumber) {
+        const lane = new Lane(iLaneNumber);
+        lane.type = "road";
 
-    getCoordinates() {
-        const theta = (this.edge.startAngle);
+        lane.id = iEdge.id * 1000 + iLaneNumber;
 
-        this.x1 = this.edge.x1 + this.offset * Math.sin(theta);   //  right π/2 from direction
-        this.y1 = this.edge.y1 - this.offset * Math.cos(theta);
-        this.x2 = this.edge.x2 + this.offset * Math.sin(theta);   //  right π/2 from direction
-        this.y2 = this.edge.y2 - this.offset * Math.cos(theta);
-        this.theta = theta;
+        lane.edge = iEdge;
+        lane.portIn = null;
+        lane.portOut = null;
 
-        const dx = this.x2 - this.x1;
-        const dy = this.y2 - this.y1;
-        this.length = Math.sqrt(dx * dx + dy * dy);
+        lane.node = null;
+        lane.laneType = "edge";
+        lane.width = iEdge.laneWidth ? iEdge.laneWidth : TRAFFIC.constants.kDefaultLaneWidth;
+        lane.color = (iEdge.laneColor) ? iEdge.laneColor : TRAFFIC.constants.kDefaultLaneColor
+        lane.speedLimit = iEdge.edgeSpeedLimit ?  iEdge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
+
+        lane.offset = iEdge.getLaneOffsetScalar(iLaneNumber); //  scalar
+        lane.unitvectorIn = lane.edge.unitVectorIn;
+        lane.unitvectorOut = lane.edge.unitVectorOut;
+
+        const offStart = iEdge.unitVectorIn.perpendicular().multiply(lane.offset);
+        const offEnd = iEdge.unitVectorOut.perpendicular().multiply(lane.offset);
+
+        lane.start = iEdge.start.add(offStart);
+        lane.end = iEdge.end.add(offEnd);
+
+        lane.myVector = lane.end.subtract(lane.start);
+        lane.mainAngle = lane.myVector.angle();
+
+        return lane;
     }
 
-/*
-    getXYTheta(u) {
-        const theta = this.startAngle
-        const x = this.x1 + u * Math.cos(theta);
-        const y = this.y1 + u * Math.sin(theta);
-        return {x, y, theta};
-    }
-*/
+    static fromPorts(iPortIn, iPortOut) {
+        const lane = new Lane(iPortIn.roadLane.laneNumber);
+        lane.type = "junction";
 
+        lane.portIn = iPortIn;
+        lane.portOut = iPortOut;
+
+        const startWidth = iPortIn.roadLane.width;
+        const startColor = iPortIn.roadLane.color;
+        const startSpeedLimit = iPortIn.roadLane.speedLimit;
+
+        lane.width = startWidth ? startWidth : TRAFFIC.constants.kDefaultLaneWidth;
+        lane.color = (startColor) ? startColor : TRAFFIC.constants.kDefaultLaneColor
+        lane.speedLimit = startSpeedLimit ?  startSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
+
+        lane.id = `P${iPortIn.id}>P${iPortOut.id})`;
+
+        lane.edge = null;
+        lane.node = iPortIn.node;
+
+        lane.offset = null;
+
+        lane.start = iPortIn.origin;
+        lane.end = iPortOut.origin;
+
+        lane.unitvectorIn = iPortIn.unitVector;
+        lane.unitvectorOut = iPortOut.unitVector;
+
+        lane.myVector = lane.end.subtract(lane.start);
+        lane.mainAngle = lane.myVector.angle();
+
+        return lane;
+    }
+
+    changeEnd(iPoint) {
+        this.end = iPoint;  //  vector, a port's origin
+        this.myVector = this.end.subtract(this.start);
+        this.mainAngle = this.myVector.angle();
+    }
+
+    changeStart(iPoint) {
+        this.start = iPoint;  //  vector, a port's origin
+        this.myVector = this.end.subtract(this.start);
+        this.mainAngle = this.myVector.angle();
+    }
+
+    uVector(u, effectiveLaneNumber) {
+
+        if (this.type === "junction") {
+            return this.start
+                .add(this.myVector.unit().multiply(u));
+        } else {
+            //  straight case
+            const offsetScalar = this.edge.getLaneOffsetScalar(effectiveLaneNumber) - this.edge.getLaneOffsetScalar(this.laneNumber);
+            return this.start
+                .add(this.unitvectorIn.multiply(u))
+                .add(this.unitvectorIn.perpendicular().multiply(offsetScalar));
+        }
+    }
+
+    angle(u) {
+        return this.mainAngle;  //  adjust for roundness...
+    }
 }

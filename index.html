@@ -16,22 +16,44 @@ local just this: http://localhost/apps/traffic/
     <link rel='stylesheet' type='text/css' href='css/carEditor.css'/>
 
     <script src="frameworks/d3.v7.min.js"></script>
+    <script src="./Vector.js"></script>
 
 </head>
 <body>
-<h3>traffic</h3>
 
-<div id="map">
+
+<div id="app">
     <div id="mapControls">
-        <span id="timePlace"></span>
-        <input id="stepButton" type="button" value="step">
-        <input id="carButton" type="button" value="new car">
+        <h3>traffic</h3>
+        <div><span id="timeDisplay"></span></div>
         &emsp;
-        <span id="focusCarString"></span>
-        <input id="editCarButton" type="button" value="edit">
+        <div id="otherControls">
+            <div class="controlRow">
+                <div id="startStopControls">
+                    <input id="stepButton" type="button" value="step">
+                    <input id="startButton" type="button" value="start">
+                    <input id="stopButton" type="button" value="stop">
+                </div>
+                &emsp;
+                <div>
+                    <input id="carButton" type="button" value="new car">
+                </div>
+                &emsp;
+                <div><span id="frameRateDisplay"></span></div>
+            </div>
+            <div class="controlRow">
+                <div id="focusCarControls">
+                    <span id="focusCarString"></span>
+                    &emsp;
+                    <input id="editCarButton" type="button" value="edit">
+                </div>
+            </div>
+        </div>
     </div>
-    <svg id="mapSVG">
-    </svg>
+    <div id="map-container">
+        <svg id="mapSVG">
+        </svg>
+    </div>
 </div>
 <br>
 <div id="debug"></div>
@@ -122,8 +144,8 @@ local just this: http://localhost/apps/traffic/
     </div>
 
     <div class="editor-buttons">
-        <button id="cancelCarEditButton"   class="btn btn-secondary" onclick="cancelCarEdit()">Cancel</button>
-        <button id="applyCarEditButton"  class="btn btn-primary" onclick="applyCarEdit()">Apply</button>
+        <button id="cancelCarEditButton" class="btn btn-secondary" onclick="cancelCarEdit()">Cancel</button>
+        <button id="applyCarEditButton" class="btn btn-primary" onclick="applyCarEdit()">Apply</button>
     </div>
 </div>
 

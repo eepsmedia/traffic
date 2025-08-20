@@ -112,12 +112,15 @@ export default class Driver {
      */
 
     async decideAboutLaneChange(dt) {
-        if (!this.changingLanes) {
-            if (Math.random() < 0.1 * dt) {
-                const newLaneNumber = Math.floor(Math.random() * this.myCar.where.lane.edge.nLanes);
-                if (newLaneNumber !== this.myCar.where.lane.laneNumber) {
-                    console.log(`    #${this.myCar.id} decided to change lanes to ${newLaneNumber}`);
-                    this.myCar.startLaneChange(newLaneNumber);
+        if (this.myCar.where.lane.type === "road") {
+
+            if (!this.changingLanes) {
+                if (Math.random() < 0.05 * dt) {
+                    const newLaneNumber = Math.floor(Math.random() * this.myCar.where.lane.edge.nLanes);
+                    if (newLaneNumber !== this.myCar.where.lane.laneNumber) {
+                        console.log(`    #${this.myCar.id} decided to change lanes to ${newLaneNumber}`);
+                        this.myCar.startLaneChange(newLaneNumber);
+                    }
                 }
             }
         }
@@ -135,9 +138,9 @@ export default class Driver {
 
         //  get the two possible lane numbers, L1 and L2.
         //  if we're not changing lanes, they will be the same.
-        const loc = this.myCar.where;
-        const L1 = Math.floor(loc.lane.laneNumber);
-        const L2 = Math.ceil(loc.lane.laneNumber);
+        const myLane = this.myCar.where.lane;
+        const L1 = Math.floor(myLane.laneNumber);
+        const L2 = Math.ceil(myLane.laneNumber);
 
         const survey = await this.surveyNearbyCars();
 
@@ -156,15 +159,21 @@ export default class Driver {
         }
     }
 
-
     async surveyNearbyCars() {
         let nearestCarByLane = [];
         const loc = this.myCar.where;
-        const theEdge = loc.lane.edge;
+        const myLane = loc.lane;
 
-        for (let L = 0; L < theEdge.nLanes; L++) {
-            const thisLane = theEdge.lanes[L];
-            nearestCarByLane[L] = this.findNextCarInLane(thisLane, loc.u, 0);
+        if (myLane.type === "road") {
+            const theEdge = myLane.edge;
+            //  nearestCarByLane = theEdge.getAllMyVehicles();
+            for (let L = 0; L < theEdge.nLanes; L++) {
+                const thisLane = theEdge.lanes[L];
+                nearestCarByLane[L] = this.findNextCarInLane(thisLane, loc.u, 0);
+            }
+        } else {
+            let L = myLane.laneNumber;
+            nearestCarByLane[L] = this.findNextCarInLane(myLane, loc.u, 0);
         }
 
         return nearestCarByLane;
@@ -180,9 +189,12 @@ export default class Driver {
         const startingX = iPos;
 
         if (iLane) {
-            const carsInEdge = iLane.edge.getAllMyVehicles();    //
+            const carsToConsider = (iLane.type === "road") ?
+                iLane.edge.getAllMyVehicles() :
+                iLane.node.getAllMyVehicles()   ;
 
-            carsInEdge.forEach(c => {
+
+            carsToConsider.forEach(c => {
                 const carLane = c.where.lane;
                 const thisLaneNumber = iLane.laneNumber;
                 const thatLaneNumber = carLane.laneNumber;
@@ -202,14 +214,11 @@ export default class Driver {
                     dist: distance
                 }
             } else {
-                iDistFromPreviousEdges += (iLane.length - startingX);
+                iDistFromPreviousEdges += (iLane.myVector.length - startingX);
             }
 
-            //      todo: fix to use actual lane connections rather than edges
-
-            if (iLane.edge.connectTo) {
+            if (iLane.portOut) {
                 //  recurse
-                //  const nextEdge = TRAFFIC.getNextEdge(iEdge);
                 const nextLane = TRAFFIC.getNextLane(iLane);
                 return this.findNextCarInLane(nextLane, 0, iDistFromPreviousEdges);
                 //  todo: account for the case where the lane number changes

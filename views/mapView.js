@@ -39,8 +39,8 @@ function drawNodes(iNodes) {
     nodes.selectAll(".nodeCircle")
         .data((node) => [node])
         .join("circle")
-        .attr("cx", node => node.x)
-        .attr("cy", node => node.y)
+        .attr("cx", node => node.origin.x)
+        .attr("cy", node => node.origin.y)
         .attr("r", TRAFFIC.constants.kNodeRadius / zoomScale)
         .attr("fill", "red")
         .attr("class", "nodeCircle")
@@ -58,10 +58,10 @@ function drawEdges(iEdges) {
     edges.selectAll(".edgeCenterline")
         .data((e) => [e])
         .join("line")
-        .attr("x1", e => e.x1)
-        .attr("y1", e => e.y1)
-        .attr("x2", e => e.x2)
-        .attr("y2", e => e.y2)
+        .attr("x1", e => e.start.x)
+        .attr("y1", e => e.start.y)
+        .attr("x2", e => e.end.x)
+        .attr("y2", e => e.end.y)
         .attr("stroke", "red")
         .attr("stroke-width", TRAFFIC.constants.kEdgeThickness / zoomScale)
         .attr("class", "edgeCenterline")
@@ -78,10 +78,10 @@ function drawRoads(iEdges) {
     roads.selectAll(".median")
         .data((e) => [e.median])
         .join("line")
-        .attr("x1", m => m.x1)
-        .attr("y1", m => m.y1)
-        .attr("x2", m => m.x2)
-        .attr("y2", m => m.y2)
+        .attr("x1", m => m.start.x)
+        .attr("y1", m => m.start.y)
+        .attr("x2", m => m.end.x)
+        .attr("y2", m => m.end.y)
         .attr("stroke", m => m.color)
         .attr("stroke-width", m => m.width)
         .attr("class", "median")
@@ -89,10 +89,10 @@ function drawRoads(iEdges) {
     roads.selectAll(".lane")
         .data((e) => e.lanes)
         .join("line")
-        .attr("x1", lane => lane.x1)
-        .attr("y1", lane => lane.y1)
-        .attr("x2", lane => lane.x2)
-        .attr("y2", lane => lane.y2)
+        .attr("x1", lane => lane.start.x)
+        .attr("y1", lane => lane.start.y)
+        .attr("x2", lane => lane.end.x)
+        .attr("y2", lane => lane.end.y)
         .attr("stroke", lane => lane.color)
         .attr("stroke-width", lane => lane.width)
         .attr("class", "lane")
@@ -100,13 +100,13 @@ function drawRoads(iEdges) {
     roads.selectAll(".shoulder")
         .data((e) => [e.shoulder])
         .join("line")
-        .attr("x1", sh => sh.x1)
-        .attr("y1", sh => sh.y1)
-        .attr("x2", sh => sh.x2)
-        .attr("y2", sh => sh.y2)
+        .attr("x1", sh => sh.start.x)
+        .attr("y1", sh => sh.start.y)
+        .attr("x2", sh => sh.end.x)
+        .attr("y2", sh => sh.end.y)
         .attr("stroke", sh => sh.color)
         .attr("stroke-width", sh => sh.width)
-        .attr("class", "median")
+        .attr("class", "shoulder")
 
 
 }
@@ -120,8 +120,8 @@ function drawCars(iVehicles) {
         .join("g")
         .attr("class", "car")
         .attr("transform", c => {
-            const pos = c.xyTheta();
-            const degreeTheta = pos.theta * 180 / Math.PI;
+            const pos = c.uVector();
+            const degreeTheta = c.angle() * 180 / Math.PI;
             const transformString = `translate(${pos.x}, ${pos.y}) rotate(${degreeTheta})`;
             return transformString
         })
@@ -210,10 +210,10 @@ function calculateBounds(edges) {
 
     edgeArray.forEach(edge => {
         // Check both start and end points
-        xMin = Math.min(xMin, edge.x1, edge.x2);
-        xMax = Math.max(xMax, edge.x1, edge.x2);
-        yMin = Math.min(yMin, edge.y1, edge.y2);
-        yMax = Math.max(yMax, edge.y1, edge.y2);
+        xMin = Math.min(xMin, edge.start.x, edge.end.x);
+        xMax = Math.max(xMax, edge.start.x, edge.end.x);
+        yMin = Math.min(yMin, edge.start.y, edge.end.y);
+        yMax = Math.max(yMax, edge.start.y, edge.end.y);
     });
 
     return {xMin, xMax, yMin, yMax};
