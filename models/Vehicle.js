@@ -29,15 +29,21 @@ export default class Vehicle {
         this.width = TRAFFIC.constants.kDefaultCarWidth;
         this.bodyColor = TRAFFIC.constants.kDefaultBodyColor;
 
+        this.totalDistance = 0;
+
     }
 
     async step(dt) {
-        this.where.u += this.speed * dt + (1/2) * this.acceleration * dt * dt;
+        const du = this.speed * dt + (1/2) * this.acceleration * dt * dt;
+        this.where.u += du;
+        this.totalDistance += du;
         this.speed += this.acceleration * dt;
 
         const myLane = this.where.lane;
 
         //  wrap to the next lane
+        this.wrapLanes(this.where.u, this.where.lane);
+/*
         while (this.where.u > myLane.myVector.length) {
             const newLane = TRAFFIC.getNextLane(myLane);
             if (newLane) {
@@ -51,6 +57,7 @@ export default class Vehicle {
                 return;     //  don't do any more processing!
             }
         }
+*/
 
         //  do lane changing
         if (this.changingLanes) {
@@ -66,8 +73,32 @@ export default class Vehicle {
             }
         }
 
+        //  update the app's data csv...codapData = ["id, when,dist,speed,acceleration, lane, u, effLane"];'
+        const now = TRAFFIC.when;
+        if (Math.floor(now) !== Math.floor(now - dt)) {
+            const basics = `${TRAFFIC.when.toFixed(2)},${this.totalDistance.toFixed(2)},${this.speed.toFixed(2)},${this.acceleration.toFixed(2)}`;
+            const laneData = `${this.where.lane.id},${this.where.u.toFixed(2)},${this.effectiveLaneNumber.toFixed(1)}`;
+            TRAFFIC.codapData.push(`${this.id},${basics},${laneData}`);
+        }
     }
 
+    wrapLanes(u, lane) {
+        if (u > lane.length) {
+            if (this.changingLanes) this.finishLaneChange();
+            const newLane = TRAFFIC.getNextLane(lane);
+            if (newLane) {
+                const leftover = u - lane.length;
+                this.where.lane = newLane;
+                this.where.u = leftover;
+                console.log(`    #${this.id} moved to lane ${this.where.lane.id} with ${leftover.toFixed(1)} m left over.`);
+                this.wrapLanes(this.where.u, this.where.lane);
+            } else {
+                TRAFFIC.removeVehicleByID(this.id);
+                return;
+            }
+        }
+        return;
+    }
 
     startLaneChange(laneTo) {
         this.laneToNumber = laneTo;

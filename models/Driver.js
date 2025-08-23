@@ -73,7 +73,7 @@ export default class Driver {
             const follow = yourCar.length + myCar.speed * my.tau;     //      following distance
 
             if (dx < yourCar.length) {
-                console.log(`  collision!  •  at t = ${TRAFFIC.when}, #${myCar.id} rear-ends #${yourCar.id}`);
+                console.log(`  collision!  •  at t = ${TRAFFIC.when.toFixed(1)}, #${myCar.id} rear-ends #${yourCar.id}`);
                 acc = yourCar.acceleration - my.normalAcc;
             } else if (dx < follow) {
                 acc = yourCar.acceleration - my.normalAcc;  //  coasting, with brake if I see brake lights
@@ -81,6 +81,9 @@ export default class Driver {
                     const timeToImpact = -dx / dv;  //  positive if we are getting closer (dv is negative)
                     acc = Math.min(dv / timeToImpact + yourCar.acceleration, acc);
                 }
+            }
+            if (acc < -1) {
+                console.log(`tailgating: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} range ${sit.dist.toFixed(2)} m.`);
             }
         }
         return acc;
@@ -98,7 +101,10 @@ export default class Driver {
             const follow = yourCar.length + myCar.speed * my.tau;     //      following distance
 
             if (dx < my.lookAhead && dv < 0) {
-                acc = -(dv * dv) / (2 * (dx - follow)) + yourCar.acceleration;
+                acc = -(dv * dv) / (2 * (dx - follow)) ;    //  + yourCar.acceleration;
+            }
+            if (acc < -1) {
+                console.log(`match speeds: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} [range ${dx.toFixed(2)} m acc= ${yourCar.acceleration}]. dv = ${dv.toFixed(2)} follow = ${follow.toFixed(0)}   `);
             }
         }
         return acc;
@@ -115,7 +121,7 @@ export default class Driver {
         if (this.myCar.where.lane.type === "road") {
 
             if (!this.changingLanes) {
-                if (Math.random() < 0.05 * dt) {
+                if (Math.random() < TRAFFIC.randomLaneChangeProbability * dt) {
                     const newLaneNumber = Math.floor(Math.random() * this.myCar.where.lane.edge.nLanes);
                     if (newLaneNumber !== this.myCar.where.lane.laneNumber) {
                         console.log(`    #${this.myCar.id} decided to change lanes to ${newLaneNumber}`);

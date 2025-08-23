@@ -2,7 +2,8 @@
 body {
     font-family: 'Roboto Condensed', sans-serif;
     font-size: small;
-    min-height: 100vh;      /* make <body> fill the plugin */
+    min-height: 100vh;
+    /* make < body > fill the plugin */
 }
 
 h3 {
@@ -17,24 +18,32 @@ input {
 }
 
 #debug {
+    position: fixed;
+    bottom: 0;
     font-family: monospace;
-    background-color: lightgray;
+    z-index: 1000;
+    background: rgba(222, 222, 222, 0.5);
     padding: 1.0em;
 }
 
 #app {
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 
 #mapControls {
     position: fixed;
-    display: flex;
-    flex-direction: row;
-
     top: 10px;
     left: 10px;
-    width: 555px;
+
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+
+    gap: 12px;
+    max-width: min(92dvw, 48rem);
+    /* responsive instead of fixed 555px */
     z-index: 1000;
     background: rgba(222, 222, 222, 0.5);
     padding: 10px;
@@ -43,6 +52,7 @@ input {
 
 #otherControls {
     display: flex;
+    align-items: center;
     flex-direction: column;
 }
 
@@ -50,7 +60,8 @@ input {
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 0;
+    gap: 12px;
 }
 
 #mapSVG {
@@ -71,3 +82,7 @@ input {
     user-select: none;
 }
 
+.toolButton {
+    width: 20px;
+    cursor: pointer;
+}

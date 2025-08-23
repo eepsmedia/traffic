@@ -8,6 +8,11 @@ export function initialize() {
     window.addEventListener("resize", resizeWindow);
     paper = d3.select("#mapSVG");
 
+    rescale()
+}
+
+export function rescale() {
+    zoomScale = 1;
     // Calculate bounds
     const bounds = calculateBounds(TRAFFIC.theEdges);
 
@@ -18,7 +23,6 @@ export function initialize() {
     resizeWindow();
     draw();
 }
-
 
 export function draw() {
     drawRoads(TRAFFIC.theEdges);
@@ -167,6 +171,7 @@ function drawCars(iVehicles) {
 }
 
 function setupZoomContainer(bounds) {
+    paper.selectAll(".flip-container").remove();
 
     const centerY = (bounds.yMin + bounds.yMax) / 2;
     const transformString = `scale(1, -1) translate(0, ${-2 * centerY})`;
@@ -192,7 +197,7 @@ function setupZoomContainer(bounds) {
             updateScalingElements();
         });
 
-    paper.call(zoom);
+    paper.call(zoom).call(zoom.transform, d3.zoomIdentity);;
 }
 
 // Fix 2: Separate function to update only scale-dependent elements

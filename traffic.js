@@ -21,10 +21,14 @@ export let theMap = {};
 
 export let focusCar = null;
 
-let dt = 1/30;
+let dt = 0.02;      //  1/30;
+const stepDT = 0.5;
 let animationID = null;
 let isRunning = false;
 let elapsed = 0;
+export let codapData = [];
+
+let randomLaneChangeProbability = 0.0;
 
 export async function initialize() {
     when = 0.0;
@@ -33,7 +37,10 @@ export async function initialize() {
 
     await loadMap("test-map");
 
+    setUpCODAPData();
     MAPVIEW.initialize();
+    setFocusDataVisibility();
+    setStartStopVisibility();
 
     spit("initialized!");
 }
@@ -45,14 +52,12 @@ function spit(message) {
     spitoon.innerHTML = debugText;
 }
 
-
-async function step() {
+function step() {
     stopAnimation()
     const now = new Date();
-    updateModel(dt);
+    updateModel(stepDT);
     redraw();
     elapsed = new Date() - now;
-
 }
 
 function updateModel(dt) {
@@ -84,11 +89,14 @@ function startAnimation() {
     if (isRunning) return;
     isRunning = true;
     animationID = requestAnimationFrame(animate);
+    setStartStopVisibility();
 }
 
 function stopAnimation() {
     isRunning = false;
     if (animationID) cancelAnimationFrame(animationID);
+    setStartStopVisibility();
+
 }
 
 function displayStep() {
@@ -101,7 +109,7 @@ function displayStep() {
 function displayCarsTable() {
     const spitoon = document.getElementById("debug");
     let out = "<table class = 'carTable'>";
-    out += "<tr><th>ID</th><th>LaneID</th><th>Lane #</th><th>Pos</th><th>Speed</th><th>Acc</th></tr>";
+    out += "<tr><th>ID</th><th width='111'>LaneID</th><th>Lane #</th><th>Pos</th><th>Speed</th><th>Acc</th></tr>";
 
     theVehicles.forEach(c => {
 
@@ -123,7 +131,7 @@ function displayFocusCarData() {
 
 function newCar() {
     const theEdge = theEdges[1];
-    const theLaneNumber = theEdge.nLanes - 1;     //  right lane
+    const theLaneNumber = Math.floor(Math.random() * theEdge.nLanes);   //    theEdge.nLanes - 1;     //  right lane
     const theLane = theEdge.lanes[theLaneNumber];
     const where = new Location(theLane, 0);
     const me = new Vehicle(where, 0, 0);
@@ -131,6 +139,20 @@ function newCar() {
     me.where.u = me.length;
 
     redraw();
+}
+
+function deleteCar(iCar) {
+    if (iCar) {
+        removeVehicleByID(iCar.id);
+        if (iCar === focusCar) {
+            focusCar = null;
+        }
+        console.log(`    #${iCar.id} was removed from the map`);
+    } else {
+        removeVehicleByID(focusCar.id);
+        focusCar = null;
+    }
+    redraw()
 }
 
 export function removeVehicleByID(iID) {
@@ -144,7 +166,19 @@ export function removeVehicleByID(iID) {
 export function setFocusCar(event, iCar) {
     console.log(`traffic setFocusCar(${iCar.getFocusString()})`);
     focusCar = (iCar === focusCar) ? null : iCar;
+    setFocusDataVisibility();
     redraw();
+}
+
+function setFocusDataVisibility() {
+    document.getElementById("focusCarControls").style.display = focusCar ? "flex" : "none";
+}
+
+function setStartStopVisibility() {
+    const startButton = document.getElementById("startButton");
+    startButton.style.display = isRunning ? "none" : "inline";
+    const stopButton = document.getElementById("stopButton");
+    stopButton.style.display = isRunning ? "inline" : "none";
 }
 
 function addListeners() {
@@ -156,6 +190,15 @@ function addListeners() {
     });
     document.getElementById('editCarButton').addEventListener('click', () => {
         CAREDIITOR.showCarEditor(focusCar);
+    });
+    document.getElementById('deleteCarButton').addEventListener('click', () => {
+        deleteCar(focusCar);
+    });
+    document.getElementById('rescaleButton').addEventListener('click', () => {
+        rescale();
+    });
+    document.getElementById('emitDataButton').addEventListener('click', () => {
+        emitData();
     });
     document.getElementById('cancelCarEditButton').addEventListener('click', () => {
         CAREDIITOR.cancelCarEdit(focusCar);
@@ -171,6 +214,19 @@ function addListeners() {
     });
 
 
+}
+
+function rescale() {
+    MAPVIEW.rescale();
+}
+
+function setUpCODAPData() {
+    codapData = ["id,when,dist,speed,acceleration,laneID,u,effLane"];
+}
+
+function emitData() {
+    navigator.clipboard.writeText(codapData.join("\n"));
+    alert("Data copied to clipboard");
 }
 
 export const constants = {
@@ -223,7 +279,8 @@ export function getNextLane(iLane) {
 
     let outLane = null;
     const portOut = iLane.portOut;
-    if (!portOut) {   console.log(`    no next lane for ${iLane.id}`);
+    if (!portOut) {
+        console.log(`    no next lane for ${iLane.id}`);
         return null;
     }
 
@@ -341,8 +398,8 @@ function createPorts(node) {
 
     //  now calculate the length reductions for each edge coming into the node:
 
-    node.inEdges.forEach( e0 => {
-        node.outEdges.forEach( e1 => {
+    node.inEdges.forEach(e0 => {
+        node.outEdges.forEach(e1 => {
             const theReduction = getEdgeReduction(e0, e1);
             //  reduce the length of the "incoming" edge
             //  which is at its "out" end

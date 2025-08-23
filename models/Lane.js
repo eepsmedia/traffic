@@ -56,7 +56,7 @@ export default class Lane {
         lane.color = (startColor) ? startColor : TRAFFIC.constants.kDefaultLaneColor
         lane.speedLimit = startSpeedLimit ?  startSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
 
-        lane.id = `P${iPortIn.id}>P${iPortOut.id})`;
+        lane.id = `${iPortIn.roadLane.id}>${iPortOut.roadLane.id}`;
 
         lane.edge = null;
         lane.node = iPortIn.node;
@@ -69,23 +69,26 @@ export default class Lane {
         lane.unitvectorIn = iPortIn.unitVector;
         lane.unitvectorOut = iPortOut.unitVector;
 
-        lane.myVector = lane.end.subtract(lane.start);
-        lane.mainAngle = lane.myVector.angle();
-
+        lane.fixLaneProperties()
         return lane;
     }
 
     changeEnd(iPoint) {
         this.end = iPoint;  //  vector, a port's origin
-        this.myVector = this.end.subtract(this.start);
-        this.mainAngle = this.myVector.angle();
+        this.fixLaneProperties()
     }
 
     changeStart(iPoint) {
         this.start = iPoint;  //  vector, a port's origin
+        this.fixLaneProperties()
+    }
+
+    fixLaneProperties() {
         this.myVector = this.end.subtract(this.start);
         this.mainAngle = this.myVector.angle();
+        this.length = this.myVector.length;
     }
+
 
     uVector(u, effectiveLaneNumber) {
 

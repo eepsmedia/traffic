@@ -25,27 +25,36 @@ local just this: http://localhost/apps/traffic/
 <div id="app">
     <div id="mapControls">
         <h3>traffic</h3>
-        <div><span id="timeDisplay"></span></div>
-        &emsp;
-        <div id="otherControls">
+        <div id="otherControls" class="controlRow">
             <div class="controlRow">
+                <div><span id="timeDisplay"></span></div>
                 <div id="startStopControls">
                     <input id="stepButton" type="button" value="step">
                     <input id="startButton" type="button" value="start">
                     <input id="stopButton" type="button" value="stop">
                 </div>
-                &emsp;
                 <div>
-                    <input id="carButton" type="button" value="new car">
+                    <input id="carButton" class="toolButton" type="image" src="art/car2.png" value="new car"
+                           title="add new car">
                 </div>
-                &emsp;
-                <div><span id="frameRateDisplay"></span></div>
+                <div>
+                    <span id="frameRateDisplay"></span>
+                </div>
+                <div class="controlRow">
+                    <input id="rescaleButton" type="button" value="rescale">
+                    <input id="emitDataButton" class="toolButton" type="image" src="art/to-clipboard.png"
+                           title="copy csv data to clipboard" value="emit data">
+                </div>
+
             </div>
-            <div class="controlRow">
-                <div id="focusCarControls">
+            <div class="controlRow" id="focusCarControls">
+                <div>
                     <span id="focusCarString"></span>
-                    &emsp;
-                    <input id="editCarButton" type="button" value="edit">
+                </div>
+                <div class="controlRow">
+                    <input id="editCarButton" class="toolButton" type="image" src="art/edit-car.png"
+                           title="edit car properties">
+                    <input id="deleteCarButton" class="toolButton" type="image" src="art/trash.png" title="delete car">
                 </div>
             </div>
         </div>
