@@ -68,7 +68,10 @@
         "shoulder" : null,
         "median" : null,
         "shoulderColor" : null
-      },
+      }
+
+    },
+    "moreEdges" : {
       "5": {
         "from" : 5,
         "to": 6,

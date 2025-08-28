@@ -8,6 +8,10 @@ export default class Edge {
             Edge.maxID = this.id;
         }
 
+        this.routeRoles = {};
+        this.defaultSuccessor = null;
+        this.defaultPredecessor = null;
+
         this.edgeSpeedLimit = iJSONedge.edgeSpeedLimit ?  iJSONedge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
 
         this.connectFrom = iNodeFrom;
@@ -72,7 +76,7 @@ export default class Edge {
         //      width of the whole road...
         this.width = this.shoulder.width + this.median.width + (this.nLanes * this.laneWidth);
 
-        //  starting at lane 0
+        //  starting at lane 0, make new lanes
         for (let i = 0; i < this.nLanes; i++) {
             const newLane = Lane.fromEdge(this, i);
             this.lanes.push(newLane);
@@ -98,6 +102,36 @@ export default class Edge {
         return out;
     }
 
+    assignRolesToLanes() {
+        //  this.routeRoles has already been set in mapMaker.js
+
+        for (let edgeID in this.routeRoles) {
+            const nextEdge = TRAFFIC.theEdges[edgeID];
+
+            const role = this.routeRoles[edgeID];
+            for (let L = 0; L < this.lanes.length; L++) {
+                const lane = this.lanes[L];
+                switch (role) {
+                    case "straight":
+
+                        break;
+                    case "left":
+                        if (lane.laneNumber === 0) {
+                            lane.routeRoles.left = true;
+                            lane.defaultSuccessor = nextEdge.lanes[0];
+                            lane.defaultPredecessor = nextEdge.lanes[nextEdge.lanes.length - 1];
+                        }
+                        break;
+                    case "right":
+                        if (lane.laneNumber === this.lanes.length - 1) {}
+                        break;
+                }
+
+
+            }
+        }
+    }
+/*
     xyTheta(u, eLane) {
         const offset = this.getLaneOffsetScalar(eLane);
         const theta = this.startAngle;
@@ -105,4 +139,5 @@ export default class Edge {
         const y = this.y1 + u * Math.sin(theta) - offset * Math.cos(theta);
         return {x, y, theta};
     }
+*/
 }

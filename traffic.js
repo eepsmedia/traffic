@@ -3,13 +3,10 @@
  */
 
 import Vehicle from "./models/Vehicle.js"
-import Edge from "./models/Edge.js"
-import Lane from "./models/Lane.js"
-import Node from "./models/Node.js"
-import Port from "./models/Port.js"
 import Location from "./models/Location.js"
 import * as MAPVIEW from "./views/mapView.js"
 import * as CAREDIITOR from "./carEditor.js"
+import * as MAPMAKER from "./models/mapMaker.js"
 
 export let when;
 export let theVehicles = [];
@@ -17,7 +14,6 @@ let debugText = "";
 
 export let theEdges = {};
 export let theNodes = {};
-export let theMap = {};
 
 export let focusCar = null;
 
@@ -35,7 +31,7 @@ export async function initialize() {
     isRunning = false;
     addListeners();
 
-    await loadMap("test-map");
+    await MAPMAKER.loadMap("test-intersections");
 
     setUpCODAPData();
     MAPVIEW.initialize();
@@ -45,7 +41,7 @@ export async function initialize() {
     spit("initialized!");
 }
 
-function spit(message) {
+export function spit(message) {
     const spitoon = document.getElementById("debug");
 
     debugText = `t = ${when}: ${message}<br>${debugText}`;
@@ -257,7 +253,10 @@ export const constants = {
     kDefaultBodyColor: "#5588cc",
     kFocusBodyColor: "#00ffff",
     kHeadlightRadius: 0.35,
+    kTaillightRadius: 0.45,
+    kBrakelightRadius: 0.75,
     kHeadlightColor: "#ffffff",
+    kTaillightColor: "#ff0000",
 
     //  edge display
     kEdgeThickness: 0.5,
@@ -296,200 +295,6 @@ export function getNextLane(iLane) {
     }
     //  console.log(`    next lane after ${iLane.id} is ${outLane.id}`);
     return outLane;
-}
-
-async function loadMap(iMapFilename) {
-    let theFileName = `maps/${iMapFilename}.json`;
-    //  this.fileNameMap[iLang];
-    let response;
-
-    try {
-        response = await fetch(theFileName);
-        if (!response.ok) {
-            alert(`map file "${iMapFilename}" is not available. Reverting to the infinite road.`);
-            response = await fetch("maps/infinite.json");
-        }
-    } catch (msg) {
-        console.error(msg);
-    }
-    const theText = await response.text();
-    const loadedMap = JSON.parse(theText).map;
-
-    theMap["title"] = loadedMap.name;
-
-    let nNodes = 0;
-    let nEdges = 0;
-
-    //  convert to the "Node" class and give each Node an id key (`theNodes` is a dictionary with id keys and Nodes as values)
-    for (let k in loadedMap.nodes) {
-        const jsonNode = loadedMap.nodes[k];
-        theNodes[k] = new Node(k, jsonNode);
-        nNodes++
-    }
-
-    //  convert to the "Edge" class and give each Edge an id key (`theEdges` is a dictionary with id keys and Edges as values)
-    for (let k in loadedMap.edges) {
-        const JSONedge = loadedMap.edges[k];    //  one edge, k is the key
-
-        const from = theNodes[JSONedge.from];   //  a node
-        const to = theNodes[JSONedge.to];
-
-        const newEdge = new Edge(k, from, to, JSONedge);    //  also creates lanes
-        theEdges[k] = newEdge;
-        theNodes[JSONedge.to].inEdges.push(newEdge);
-        theNodes[JSONedge.from].outEdges.push(newEdge);
-
-        nEdges++;
-    }
-
-    spit(`loaded ${nEdges} edges and ${nNodes} nodes.`);
-
-    //  find the widest edge...
-    //  we need widths to find the ports...
-
-    for (let k in theNodes) {
-        let theWidth = 0;
-        const node = theNodes[k];
-        node.outEdges.forEach(edge => {
-            if (edge.width > theWidth) {
-                theWidth = edge.length;
-            }
-        });
-        node.inEdges.forEach(edge => {
-            if (edge.width > theWidth) {
-                theWidth = edge.length;
-            }
-        })
-
-        node.width = theWidth;      //  we will use this for the width of the junction
-        console.log(`   node #${node.id} has width ${node.width.toFixed(1)}`);
-    }
-
-    //  create the ports for each node
-
-    for (let k in theNodes) {
-        createPorts(theNodes[k]);
-    }
-
-}
-
-function createPorts(node) {
-    console.log(`   creating ports for node #${node.id}`);
-
-    node.inPorts = [];
-    node.outPorts = [];
-
-    //  create the in-ports, then the out-ports
-
-    node.inEdges.forEach(edge => {
-        edge.lanes.forEach(lane => {
-            const newPort = new Port(node, lane, "in");
-            node.inPorts.push(newPort);
-        });
-    });
-
-    node.outEdges.forEach(edge => {
-        edge.lanes.forEach(lane => {
-            const newPort = new Port(node, lane, "out");
-            node.outPorts.push(newPort);
-        });
-    });
-
-
-    //  now calculate the length reductions for each edge coming into the node:
-
-    node.inEdges.forEach(e0 => {
-        node.outEdges.forEach(e1 => {
-            const theReduction = getEdgeReduction(e0, e1);
-            //  reduce the length of the "incoming" edge
-            //  which is at its "out" end
-            if (theReduction > e0.outReduction) {
-                e0.outReduction = theReduction;
-            }
-            //  reduce the length of the "outgoing" edge, at its "in" end
-            if (theReduction > e1.inReduction) {
-                e1.inReduction = theReduction;
-            }
-            console.log(
-                `     connection E${e0.id} -> E${e1.id} reducing lengths by ${theReduction.toFixed(2)}`
-            )
-        })
-    });
-
-    //  find locations for all in-ports
-
-    node.inPorts.forEach(p0 => {
-        const lane = p0.roadLane;
-        const reduction = p0.edge.outReduction;
-        const rightVector = p0.unitVector.perpendicular();
-        const portVector = p0.unitVector.multiply(-reduction)
-            .add(rightVector.multiply(lane.offset));
-        p0.origin = p0.node.origin.add(portVector);
-        p0.adjustLaneEndsToMatch();
-        //  p0.setXY(p0.node.origin.x + portVector.x, p0.node.origin.y + portVector.y)
-        console.log(`     inPort ${p0.id} is at (${p0.origin.x.toFixed(1)}, ${p0.origin.y.toFixed(1)})`);
-    })
-
-    node.outPorts.forEach(p0 => {
-        const lane = p0.roadLane;
-        const reduction = p0.edge.inReduction;
-        const rightVector = p0.unitVector.perpendicular();
-        const portVector = p0.unitVector.multiply(reduction)
-            .add(rightVector.multiply(lane.offset));
-        p0.origin = p0.node.origin.add(portVector);
-        p0.adjustLaneEndsToMatch();
-
-        //  p0.setXY(p0.node.origin.x + portVector.x, p0.node.origin.y + portVector.y)
-        console.log(`     outPort ${p0.id} is at (${p0.origin.x.toFixed(1)}, ${p0.origin.y.toFixed(1)})`);
-    })
-
-    //  for now, only two edge connections per node, one in one out
-
-    //  connect every in EDGE to every out EDGE, given lane numbers match
-    //  these are the "internal" connections
-    node.inPorts.forEach(p0 => {
-        node.outPorts.forEach(p1 => {
-            if (p0.roadLane.laneNumber === p1.roadLane.laneNumber) {
-                const inPort = p0;
-                const outPort = p1;
-                const aLane = Lane.fromPorts(inPort, outPort);
-                p0.junctionLanes.push(aLane);
-                p1.junctionLanes.push(p1.roadLane);
-                node.junctionLanes.push(aLane);
-
-                //  todo: consider other possibilities of OK connections
-
-                console.log(`     node  #${node.id} (internal) connecting L${inPort.roadLane.id} to junction lane L${aLane.id}`);
-            }
-        })
-
-    });
-
-}
-
-/**
- * Given two edges (at a node) calculate the amount that each edge's
- * length will need to be reduced to account for the junction.
- *
- * @param e1
- * @param e2
- */
-function getEdgeReduction(e1, e2) {
-    let theReduction = 0;
-    //  let phi be the angle between the two unit vectors
-    const sinTheta = e1.unitVectorOut.cross(e2.unitVectorIn); //  positive for left turns
-
-    if (sinTheta > 0) {
-        console.log(`   edge ${e1.id} is to the right of edge ${e2.id}`);
-        //  theReduction remains zero...
-    } else {
-        const cosTheta = e1.unitVectorOut.dot(e2.unitVectorIn);
-        //  now, phi is theta / 2...
-        const tanPhi = Math.sqrt((1 - cosTheta) / (1 + cosTheta));
-        theReduction = e1.width * tanPhi;
-        console.log(`   edge ${e1.id} is to the left of edge ${e2.id}, reducing by ${theReduction.toFixed(2)}`);
-    }
-    return theReduction;
 }
 
 

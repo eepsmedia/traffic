@@ -167,6 +167,35 @@ function drawCars(iVehicles) {
         .attr("fill", TRAFFIC.constants.kHeadlightColor)
         .attr("class", "left-headlight")
 
+    cars.selectAll(".right-taillight")
+        .data((c) => [c])
+        .join("circle")
+        .attr("cy", c => -c.width * 0.4)
+        .attr("cx", c => -c.length)
+        /*
+        .attr("r", (c) => {
+            if (c.usingBrake) {
+                console.log(`${c.id} is braking`);
+                return TRAFFIC.constants.kBrakelightRadius;
+            } else {
+                return TRAFFIC.constants.kTaillightRadius;
+            }
+        })
+        */
+        .attr("r", c => c.usingBrake ? TRAFFIC.constants.kBrakelightRadius : TRAFFIC.constants.kTaillightRadius)
+        .attr("fill", TRAFFIC.constants.kTaillightColor)
+        .attr("class", "right-taillight")
+
+    cars.selectAll(".left-taillight")
+        .data((c) => [c])
+        .join("circle")
+        .attr("cy", c => c.width * 0.4)
+        .attr("cx", c => -c.length)
+        .attr("r", c => c.usingBrake ? TRAFFIC.constants.kBrakelightRadius : TRAFFIC.constants.kTaillightRadius)
+        .attr("fill", TRAFFIC.constants.kTaillightColor)
+        .attr("class", "left-taillight")
+
+
 
 }
 

@@ -22,6 +22,7 @@ export default class Driver {
     }
 
     async getAcceleration(dt) {
+        this.myCar.usingBrake = false;
         let acc = 0;
         const sit = await this.findNearestCar();
 
@@ -75,11 +76,15 @@ export default class Driver {
             if (dx < yourCar.length) {
                 console.log(`  collision!  •  at t = ${TRAFFIC.when.toFixed(1)}, #${myCar.id} rear-ends #${yourCar.id}`);
                 acc = yourCar.acceleration - my.normalAcc;
+                this.myCar.usingBrake = true;
+
             } else if (dx < follow) {
                 acc = yourCar.acceleration - my.normalAcc;  //  coasting, with brake if I see brake lights
                 if (dv < 0) {   //  if we're closing, may need to brake harder
                     const timeToImpact = -dx / dv;  //  positive if we are getting closer (dv is negative)
                     acc = Math.min(dv / timeToImpact + yourCar.acceleration, acc);
+                    this.myCar.usingBrake = true;
+
                 }
             }
             if (acc < -1) {
@@ -100,8 +105,10 @@ export default class Driver {
             const dv = yourCar.speed - myCar.speed;       //  negative means closing
             const follow = yourCar.length + myCar.speed * my.tau;     //      following distance
 
-            if (dx < my.lookAhead && dv < 0) {
+            if (dx < my.lookAhead && dv < -1) {
                 acc = -(dv * dv) / (2 * (dx - follow)) ;    //  + yourCar.acceleration;
+                this.myCar.usingBrake = true;
+
             }
             if (acc < -1) {
                 console.log(`match speeds: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} [range ${dx.toFixed(2)} m acc= ${yourCar.acceleration}]. dv = ${dv.toFixed(2)} follow = ${follow.toFixed(0)}   `);

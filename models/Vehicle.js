@@ -16,6 +16,7 @@ export default class Vehicle {
         this.where = iLoc;
         this.speed = iSpeed;
         this.acceleration = iAcc;
+        this.usingBrake = false;
         this.sit = null;
 
         //  lane-changing
@@ -30,6 +31,7 @@ export default class Vehicle {
         this.bodyColor = TRAFFIC.constants.kDefaultBodyColor;
 
         this.totalDistance = 0;
+        this.unitVector = null;
 
     }
 
@@ -156,6 +158,10 @@ export default class Vehicle {
         return `id: ${this.id} ${laneData} speed: ${this.speed.toFixed(1)} acc: ${this.acceleration.toFixed(1)}`;
     }
 
+    /**
+     * vector from the ORIGIN to the position of the vehicle
+     * @returns {*}
+     */
     uVector() {
         let pos =  this.where.lane.uVector(this.where.u, this.effectiveLaneNumber);
         return pos;

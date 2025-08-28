@@ -44,4 +44,8 @@ class Vector {
         const y = -this.x;
         return new Vector(x, y);
     }
+
+    toString() {
+        return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
+    }
 }

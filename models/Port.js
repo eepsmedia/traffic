@@ -3,19 +3,22 @@
 export default class Port {
     constructor(iNode, iLane, iInOut) {
 
-        this.id = iNode.id * 1000000 + iLane.id;
+        this.id = `N${iNode.id}  L${iLane.id}`;
         this.origin = null;
-        this.roadLane = iLane;
-        this.junctionLanes = [];
-        this.node = iNode;
-        this.inOut = iInOut;
+        this.roadLane = iLane;      //  the lane on the "road" side of the port
         this.edge = this.roadLane.edge;     //  which edge it connects to
 
+        this.junctionLanes = [];    //  "inner" lanes, connecting inPorts to outPorts
+        this.node = iNode;
+        this.inOut = iInOut;        //  is this an input or an output port (wrt the node, the junction)
+
         this.unitVector = (this.inOut === "in") ? this.edge.unitVectorOut : this.edge.unitVectorIn;
-        this.theta = (this.inOut === "in") ? this.edge.endAngle : this.edge.startAngle;
+        this.theta = this.unitVector.angle();
 
         this.speedLimit = this.roadLane.speedLimit;
         this.width = this.roadLane.width;
+
+        //  tell each lane that this port is its connector.
 
         if (this.inOut === "in") {
             this.roadLane.portOut = this;
@@ -24,6 +27,10 @@ export default class Port {
         }
     }
 
+    /**
+     * adjust the lane ends to match the port's origin,
+     * which may have been moved to account for reductions in a junction.
+     */
     adjustLaneEndsToMatch() {
         if (this.inOut === "in") {
             this.roadLane.changeEnd(this.origin);
@@ -32,6 +39,7 @@ export default class Port {
         }
     }
 
+/*
     setXY(ix, iy) {
         console.log("*** call to Port.setXY");
 
@@ -45,5 +53,6 @@ export default class Port {
         }
 
     }
+*/
 
 }
