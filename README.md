@@ -33,7 +33,7 @@ at a node's input port.
 
 ## Edge and lane route roles
 
-Every edge and levery lane has what we call "route roles."
+Every edge and every lane has what we call "route roles."
 The idea is that we need to know about turning right or left, going straight, or making a u-turn.
 For a section of road, this is done thinking about the upcoming junction.
 
