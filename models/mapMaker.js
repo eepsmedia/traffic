@@ -4,6 +4,8 @@ import Lane from "./Lane.js"
 import Node from "./Node.js"
 import Port from "./Port.js"
 
+import {makeGrid} from "../maps/grid.js"
+
 import * as VECTOR from "../Vector.js"
 
 
@@ -27,7 +29,9 @@ export async function loadMap(iMapFilename) {
         console.error(msg);
     }
     const theText = await response.text();
-    const loadedMap = JSON.parse(theText).map;
+    //  const loadedMap = JSON.parse(theText).map;
+
+    const loadedMap = makeGrid().map;
 
     theMap["title"] = loadedMap.name;
 
@@ -109,6 +113,7 @@ export async function loadMap(iMapFilename) {
 
                     roadLane.routeRoles[junctionLaneID] = innerRole;
 
+/*
                     if (innerRole === "straight") {
                         roadLane.defaultSuccessor = junctionLane;
                     }
@@ -117,6 +122,7 @@ export async function loadMap(iMapFilename) {
                     if (outLaneNumber === roadLane.laneNumber) {
                         roadLane.defaultSuccessor = junctionLane;
                     }
+*/
                 })
             })
         })
@@ -169,9 +175,16 @@ function displayMapState() {
     const theNodes = TRAFFIC.theNodes;
     const theEdges = TRAFFIC.theEdges;
 
+    console.log("\n*** MAP STATE ***\n")
     for (let k in theNodes) {
         const node = theNodes[k];
         console.log(`node #${node.id} has ${node.inEdges.length} in-edges and ${node.outEdges.length} out-edges.`);
         node.junctionLanes.forEach(junctionLane => { console.log(junctionLane.toString())})
+    }
+
+    for (let k in theEdges) {
+        const edge = theEdges[k];
+        console.log(`edge #${edge.id} has ${edge.lanes.length} lanes.`);
+        edge.lanes.forEach(lane => { console.log(lane.toString())})
     }
 }

@@ -126,7 +126,7 @@ function displayFocusCarData() {
 }
 
 function newCar() {
-    const theEdge = theEdges[1];
+    const theEdge = theEdges[0];
     const theLaneNumber = Math.floor(Math.random() * theEdge.nLanes);   //    theEdge.nLanes - 1;     //  right lane
     const theLane = theEdge.lanes[theLaneNumber];
     const where = new Location(theLane, 0);
@@ -261,16 +261,6 @@ export const constants = {
     //  edge display
     kEdgeThickness: 0.5,
     kNodeRadius: 3,
-}
-
-export function getNextEdge(iEdge) {
-    let outEdge = null;
-
-    const theConnectingNode = iEdge.connectTo;
-    if (theConnectingNode.outEdges.length > 0) {
-        outEdge = theConnectingNode.outEdges[0];
-    }
-    return outEdge;
 }
 
 export function getNextLane(iLane) {

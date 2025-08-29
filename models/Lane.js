@@ -1,5 +1,6 @@
 import * as TRAFFIC from "../traffic.js"
 import * as EDGE from "./Edge.js"
+import * as MAPMAKER from "./mapMaker.js";
 
 
 export default class Lane {
@@ -86,7 +87,7 @@ export default class Lane {
         lane.color = (startColor) ? startColor : TRAFFIC.constants.kDefaultLaneColor
         lane.speedLimit = startSpeedLimit ?  startSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
 
-        this.routeRole = null;     //  this singular exists for junction lanes.
+        lane.routeRole = MAPMAKER.getRoleFromUnitVectors(iPortIn.unitVector, iPortOut.unitVector);      //  this singular exists for junction lanes.
 
         lane.edge = null;
         lane.node = iPortIn.node;
@@ -140,17 +141,16 @@ export default class Lane {
 
     toString() {
         const parent = (this.edge) ? `edge ${this.edge.id}` : `node ${this.node.id}`;
-        const line1 = `Lane ${this.id} of ${parent} at ${this.start.toString()} to ${this.end.toString()}`;
+        const line1 = `Lane ${this.id} of ${parent} at ${this.start.toString()} to ${this.end.toString()} default: ${(this.defaultSuccessor) ? this.defaultSuccessor.id : "none"}`;
         const line2 = `    laneNumber: ${this.laneNumber}, laneType: ${this.laneType}, type: ${this.type}`;
         let role1 = "";
         if (this.routeRole) {
-            role1 = `    role: ${this.routeRole}`
+            role1 = `    role: ${this.routeRole}`;
         }
         let role2 = "";
         if (this.routeRoles) {
             for (let K in this.routeRoles) {
-                role2 += `    role: ${this.routeRoles[K]}, edge: ${K}`
-
+                role2 += `    role: ${this.routeRoles[K]} to lane: ${K}`;
             }
         }
         const line3 = `    ${(this.routeRole) ? role1 : role2}`;

@@ -45,21 +45,6 @@ export default class Vehicle {
 
         //  wrap to the next lane
         this.wrapLanes(this.where.u, this.where.lane);
-/*
-        while (this.where.u > myLane.myVector.length) {
-            const newLane = TRAFFIC.getNextLane(myLane);
-            if (newLane) {
-                if (this.changingLanes) this.finishLaneChange();    //  todo: kludge alert! really we shouldn't start a change if we can't finish it before a junction
-                const leftover = this.where.u - myLane.myVector.length;
-                this.where.lane = newLane;
-                this.where.u = leftover;
-                console.log(`    #${this.id} moved to lane ${newLane.id} with ${leftover.toFixed(1)} m left over.`);
-            } else {
-                TRAFFIC.removeVehicleByID(this.id);
-                return;     //  don't do any more processing!
-            }
-        }
-*/
 
         //  do lane changing
         if (this.changingLanes) {
@@ -87,7 +72,7 @@ export default class Vehicle {
     wrapLanes(u, lane) {
         if (u > lane.length) {
             if (this.changingLanes) this.finishLaneChange();
-            const newLane = TRAFFIC.getNextLane(lane);
+            const newLane = this.driver.chooseNextLane();
             if (newLane) {
                 const leftover = u - lane.length;
                 this.where.lane = newLane;

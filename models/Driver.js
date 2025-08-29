@@ -232,13 +232,29 @@ export default class Driver {
 
             if (iLane.portOut) {
                 //  recurse
-                const nextLane = TRAFFIC.getNextLane(iLane);
+                const nextLane = iLane.defaultSuccessor;    //  TRAFFIC.getNextLane(iLane);
                 return this.findNextCarInLane(nextLane, 0, iDistFromPreviousEdges);
                 //  todo: account for the case where the lane number changes
             }
         }
 
         return null;
+    }
+
+    chooseNextLane() {
+        const myCar = this.myCar;
+        const myLane = myCar.where.lane;
+        let nextLane = null;
+
+        if (myLane.type === "road") {
+            const theLanes = myLane.portOut.junctionLanes;
+            const ix = Math.floor(Math.random() * theLanes.length);
+            nextLane = theLanes[ix];
+        } else {
+            nextLane = myLane.portOut.roadLane;
+        }
+
+        return nextLane
     }
 
 }
