@@ -16,7 +16,6 @@ export async function loadMap(iMapFilename) {
     const theEdges = TRAFFIC.theEdges;
 
     let theFileName = `maps/${iMapFilename}.json`;
-    //  this.fileNameMap[iLang];
     let response;
 
     try {
@@ -29,8 +28,10 @@ export async function loadMap(iMapFilename) {
         console.error(msg);
     }
     const theText = await response.text();
-    //  const loadedMap = JSON.parse(theText).map;
 
+    //  pick one of these!
+
+    //  const loadedMap = JSON.parse(theText).map;
     const loadedMap = makeGrid().map;
 
     theMap["title"] = loadedMap.name;

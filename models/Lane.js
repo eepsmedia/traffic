@@ -38,6 +38,7 @@ export default class Lane {
         lane.width = iEdge.laneWidth ? iEdge.laneWidth : TRAFFIC.constants.kDefaultLaneWidth;
         lane.color = (iEdge.laneColor) ? iEdge.laneColor : TRAFFIC.constants.kDefaultLaneColor
         lane.speedLimit = iEdge.edgeSpeedLimit ?  iEdge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
+        lane.speedLimit = iEdge.edgeSpeedLimit ? iEdge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
 
         lane.offset = iEdge.getLaneOffsetScalar(iLaneNumber); //  scalar
         lane.unitvectorIn = lane.edge.unitVectorIn;
@@ -70,7 +71,6 @@ export default class Lane {
         lane.type = "junction";
         lane.laneType = "node";
 
-
         lane.portIn = iPortIn;
         lane.portOut = iPortOut;
 
@@ -85,17 +85,20 @@ export default class Lane {
 
         lane.width = startWidth ? startWidth : TRAFFIC.constants.kDefaultLaneWidth;
         lane.color = (startColor) ? startColor : TRAFFIC.constants.kDefaultLaneColor
-        lane.speedLimit = startSpeedLimit ?  startSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
+        lane.speedLimit = startSpeedLimit ? startSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
 
         lane.routeRole = MAPMAKER.getRoleFromUnitVectors(iPortIn.unitVector, iPortOut.unitVector);      //  this singular exists for junction lanes.
 
-        lane.edge = null;
+        lane.edge = null;       //      the parent is not an Edge, it's a Node
         lane.node = iPortIn.node;
 
         lane.offset = null;
 
-        lane.start = iPortIn.origin;
+        lane.start = iPortIn.origin;    //  Vector
         lane.end = iPortOut.origin;
+
+        lane.center = lane.getCenter();
+        lane.radius = lane.center ? lane.start.subtract(lane.center) : null;    //  Vector
 
         lane.unitvectorIn = iPortIn.unitVector;
         lane.unitvectorOut = iPortOut.unitVector;
@@ -103,6 +106,29 @@ export default class Lane {
         lane.fixLaneProperties()
         return lane;
     }
+
+    getCenter(iLane) {
+        let out = null;
+
+        switch (this.routeRole) {
+            case "left":
+                out = this.node.origin;
+                break;
+            case "right":
+                const p0 = this.portIn;
+                const reduction = p0.edge.outReduction;
+                const rightVector = p0.unitVector.perpendicular();
+                const cornerVector = p0.unitVector.multiply(-reduction)
+                    .add(rightVector.multiply(this.node.width));
+                out = this.node.origin.add(cornerVector);
+
+                break;
+            default:
+                break;
+        }
+        return out;
+    }
+
 
     changeEnd(iPoint) {
         this.end = iPoint;  //  vector, a port's origin
@@ -118,14 +144,33 @@ export default class Lane {
         this.myVector = this.end.subtract(this.start);
         this.mainAngle = this.myVector.angle();
         this.length = this.myVector.length;
+
+        if (this.center) {
+            //  some unit vectors relative to the center of the arc
+            const endRadiusUnit = this.end.subtract(this.center).unit();
+            const startRadiusUnit = this.start.subtract(this.center).unit();
+
+            //  the angle between the two unit vectors
+            const theCosine = endRadiusUnit.dot(startRadiusUnit);
+            const theSine = endRadiusUnit.cross(startRadiusUnit);
+            const theAngle = -Math.atan2(theSine, theCosine);   //  in radians
+
+            this.length = Math.abs(this.radius.length * theAngle);  //  d = r * theta
+        }
     }
 
 
     uVector(u, effectiveLaneNumber) {
 
         if (this.type === "junction") {
-            return this.start
-                .add(this.myVector.unit().multiply(u));
+            if (this.center) {
+                const angleIsPositive = this.unitvectorIn.cross(this.unitvectorOut) > 0;
+                const theAngle = angleIsPositive ? u / this.radius.length : -u / this.radius.length;   //      u is the arc distance
+                const currentR = this.radius.rotate(theAngle);
+                return this.center.add(currentR);
+            } else {
+                return this.start.add(this.myVector.unit().multiply(u));
+            }
         } else {
             //  straight case
             const offsetScalar = this.edge.getLaneOffsetScalar(effectiveLaneNumber) - this.edge.getLaneOffsetScalar(this.laneNumber);
@@ -136,7 +181,13 @@ export default class Lane {
     }
 
     angle(u) {
-        return this.mainAngle;  //  todo adjust for round arcs...
+        if (this.center) {
+            const angleIsPositive = this.unitvectorIn.cross(this.unitvectorOut) > 0;
+            const theAngle = angleIsPositive ? u / this.radius.length : -u / this.radius.length;   //      u is the arc distance
+            return theAngle + this.unitvectorIn.angle();
+        } else {
+            return this.mainAngle;
+        }
     }
 
     toString() {

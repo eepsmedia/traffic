@@ -11,6 +11,15 @@ h3 {
     padding-right: 1.0em;
 }
 
+td {
+    min-width: 4.0em;
+    text-align: right;
+}
+th {
+    min-width: 4.0em;
+    text-align: right;
+}
+
 input {
     font-family: 'Roboto Condensed', sans-serif;
     font-size: small;

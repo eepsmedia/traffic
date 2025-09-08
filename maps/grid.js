@@ -5,7 +5,7 @@
 //      4 nodes wide, 3 tall
 
 const nodesWide = 4;
-const nodesTall = 3;
+const nodesTall = 4;
 
 
 export function makeGrid() {
@@ -26,15 +26,16 @@ export function makeGrid() {
         }
     }
 
-    let edgeID = 0;
+    let edgeID = 1;
 
     //  now create the horizontal edges
-    for (let i = 0; i < nodesWide - 1; i++) {
-        for (let j = 0; j < nodesTall; j++) {
+    for (let col = 0; col < nodesWide - 1; col++) {
+        for (let row = 0; row < nodesTall; row++) {
             const id = edgeID++;
+            const isEven = (row % 2 === 0);
             const edgeHoriz = {
-                from: i * nodesWide + j,
-                to: i * nodesWide + j + 1,
+                from: isEven ? row * nodesWide + col +1: row * nodesWide + col,
+                to: isEven ? row * nodesWide + col : row * nodesWide + col + 1,
                 nLanes: 2,
                 oneway: true,
                 shoulder: null,
@@ -44,14 +45,15 @@ export function makeGrid() {
         }
     }
     //  now create the vertical edges
-    for (let i = 0; i < nodesWide; i++) {
-        for (let j = 0; j < nodesTall - 1; j++) {
+    for (let col = 0; col < nodesWide; col++) {
+        for (let row = 0; row < nodesTall - 1; row++) {
             const id = edgeID++;
-            const startNode = j * nodesWide + i;
+            const startNode = row * nodesWide + col;
+            const isEven = (col % 2 === 0);
 
             const edgeVert = {
-                from: startNode,
-                to: startNode + nodesWide,
+                from: isEven ? startNode : startNode + nodesWide,
+                to: isEven ? startNode + nodesWide : startNode,
                 nLanes: 2,
                 oneway: true,
                 shoulder: null,

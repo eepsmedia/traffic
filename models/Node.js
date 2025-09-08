@@ -214,7 +214,9 @@ export default class Node {
      */
     static getEdgeReduction(e1, e2) {
         let theReduction = 0;
-        //  let phi be the angle between the two unit vectors
+
+        //  theta is the angle between the two unit vectors
+
         const sinTheta = e1.unitVectorOut.cross(e2.unitVectorIn); //  positive for left turns
 
         if (sinTheta > 0) {

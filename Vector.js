@@ -45,6 +45,14 @@ class Vector {
         return new Vector(x, y);
     }
 
+    rotate(theta) {
+        const cos = Math.cos(theta);
+        const sin = Math.sin(theta);
+        const xPrime = this.x * cos - this.y * sin;
+        const yPrime = this.x * sin + this.y * cos;
+        return new Vector(xPrime, yPrime);
+    }
+
     toString() {
         return `(${this.x.toFixed(2)}, ${this.y.toFixed(2)})`;
     }

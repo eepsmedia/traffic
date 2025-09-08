@@ -105,7 +105,7 @@ function displayStep() {
 function displayCarsTable() {
     const spitoon = document.getElementById("debug");
     let out = "<table class = 'carTable'>";
-    out += "<tr><th>ID</th><th width='111'>LaneID</th><th>Lane #</th><th>Pos</th><th>Speed</th><th>Acc</th></tr>";
+    out += "<tr><th>ID</th><th width='80'>LaneID</th><th>Lane #</th><th>Pos</th><th>Speed</th><th>Acc</th></tr>";
 
     theVehicles.forEach(c => {
 
@@ -126,7 +126,7 @@ function displayFocusCarData() {
 }
 
 function newCar() {
-    const theEdge = theEdges[0];
+    const theEdge = theEdges[1];        //  the "1" is the id of the first edge.
     const theLaneNumber = Math.floor(Math.random() * theEdge.nLanes);   //    theEdge.nLanes - 1;     //  right lane
     const theLane = theEdge.lanes[theLaneNumber];
     const where = new Location(theLane, 0);
@@ -222,7 +222,7 @@ function setUpCODAPData() {
 
 function emitData() {
     navigator.clipboard.writeText(codapData.join("\n"));
-    alert("Data copied to clipboard");
+    alert(`${codapData.length} csv lines copied to clipboard`);
 }
 
 export const constants = {
@@ -259,8 +259,8 @@ export const constants = {
     kTaillightColor: "#ff0000",
 
     //  edge display
-    kEdgeThickness: 0.5,
-    kNodeRadius: 3,
+    kEdgeThickness: 0.3,
+    kNodeRadius: 1.2,
 }
 
 export function getNextLane(iLane) {
