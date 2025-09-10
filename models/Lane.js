@@ -37,7 +37,6 @@ export default class Lane {
         lane.node = null;
         lane.width = iEdge.laneWidth ? iEdge.laneWidth : TRAFFIC.constants.kDefaultLaneWidth;
         lane.color = (iEdge.laneColor) ? iEdge.laneColor : TRAFFIC.constants.kDefaultLaneColor
-        lane.speedLimit = iEdge.edgeSpeedLimit ?  iEdge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
         lane.speedLimit = iEdge.edgeSpeedLimit ? iEdge.edgeSpeedLimit : TRAFFIC.constants.kDefaultSpeedLimit;
 
         lane.offset = iEdge.getLaneOffsetScalar(iLaneNumber); //  scalar
@@ -52,6 +51,8 @@ export default class Lane {
 
         lane.myVector = lane.end.subtract(lane.start);
         lane.mainAngle = lane.myVector.angle();
+
+        lane.maxSafeSpeed = Infinity
 
         return lane;
     }
@@ -98,8 +99,15 @@ export default class Lane {
         lane.end = iPortOut.origin;
 
         lane.center = lane.getCenter();
-        lane.radius = lane.center ? lane.start.subtract(lane.center) : null;    //  Vector
 
+        if (lane.center) {   // it's curves
+            lane.radius = lane.start.subtract(lane.center);
+            const scalarRadius = lane.radius.length;
+            lane.maxSafeSpeed = Math.sqrt(scalarRadius * TRAFFIC.constants.kMaxTransverseAcceleration);
+        } else {
+            lane.radius = null;
+            lane.maxSafeSpeed = Infinity
+        }
         lane.unitvectorIn = iPortIn.unitVector;
         lane.unitvectorOut = iPortOut.unitVector;
 
@@ -122,6 +130,9 @@ export default class Lane {
                     .add(rightVector.multiply(this.node.width));
                 out = this.node.origin.add(cornerVector);
 
+                break;
+            case "uturn":
+                out = this.node.origin;
                 break;
             default:
                 break;
@@ -164,7 +175,7 @@ export default class Lane {
 
         if (this.type === "junction") {
             if (this.center) {
-                const angleIsPositive = this.unitvectorIn.cross(this.unitvectorOut) > 0;
+                const angleIsPositive = this.unitvectorIn.cross(this.unitvectorOut) >= 0;
                 const theAngle = angleIsPositive ? u / this.radius.length : -u / this.radius.length;   //      u is the arc distance
                 const currentR = this.radius.rotate(theAngle);
                 return this.center.add(currentR);
@@ -182,7 +193,7 @@ export default class Lane {
 
     angle(u) {
         if (this.center) {
-            const angleIsPositive = this.unitvectorIn.cross(this.unitvectorOut) > 0;
+            const angleIsPositive = this.unitvectorIn.cross(this.unitvectorOut) >= 0;
             const theAngle = angleIsPositive ? u / this.radius.length : -u / this.radius.length;   //      u is the arc distance
             return theAngle + this.unitvectorIn.angle();
         } else {
@@ -205,6 +216,7 @@ export default class Lane {
             }
         }
         const line3 = `    ${(this.routeRole) ? role1 : role2}`;
-        return line1 + "\n" + line2 + "\n" + line3;
+        const line4 = this.center ? `    center: ${this.center.toString()}, r = ${this.radius.length.toFixed(2)}` : `    straight`;
+        return line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
     }
 }

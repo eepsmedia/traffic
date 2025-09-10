@@ -26,6 +26,19 @@ input {
 
 }
 
+#settings {
+    position: fixed;
+    top: 8.0em;
+    left: 3.0em;
+    display: flex;
+    flex-direction: column;
+    gap: 1.0em;
+    z-index: 1000;
+    background: rgba(222, 222, 255, 0.8);
+    padding: 1.0em;
+    border-radius: 5px;
+}
+
 #debug {
     position: fixed;
     bottom: 0;

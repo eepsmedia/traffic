@@ -21,6 +21,19 @@ local just this: http://localhost/apps/traffic/
 </head>
 <body>
 
+<div id="settings" display="none">
+    <h3>traffic sim settings</h3>
+    <div>
+    <label for="mapMenu">Choose a map:</label>
+    <select id="mapMenu"></select>
+    </div>
+    <div>
+        <label for="carsAppearAnywhere">Cars appear anywhere:</label>
+        <input type="checkbox" id="carsAppearAnywhere" checked>
+    </div>
+    <input id="closeSettingsButton" type="button"
+           title="settings" value="close settings">
+</div>
 
 <div id="app">
     <div id="mapControls">
@@ -40,11 +53,11 @@ local just this: http://localhost/apps/traffic/
                 <div>
                     <span id="frameRateDisplay"></span>
                 </div>
-                <div class="controlRow">
-                    <input id="rescaleButton" type="button" value="rescale">
-                    <input id="emitDataButton" class="toolButton" type="image" src="art/to-clipboard.png"
-                           title="copy csv data to clipboard" value="emit data">
-                </div>
+                <input id="rescaleButton" type="button" value="rescale">
+                <input id="emitDataButton" class="toolButton" type="image" src="art/to-clipboard.png"
+                       title="copy csv data to clipboard" value="emit data">
+                <input id="settingsButton" class="toolButton" type="image" src="art/settings.png"
+                    title="settings" value="settings">
 
             </div>
             <div class="controlRow" id="focusCarControls">

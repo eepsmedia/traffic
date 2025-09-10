@@ -14,10 +14,10 @@ export default class Driver {
         this.lookAhead = TRAFFIC.constants.kDefaultLookAhead;
         this.tau = TRAFFIC.constants.kDefaultTau;       //  following distance
         this.normalAcc = Number((1 + Math.random()).toFixed(2));
+        this.normalDecel = 2;       //  m/s^2
         this.speedZoneWidth = TRAFFIC.constants.kDefaultDesiredSpeedZoneWidth;
         this.overSpeedLimit = TRAFFIC.constants.kDefaultOverSpeedLimit;
         this.laneChangeDuration = TRAFFIC.constants.kDefaultLaneChangeDuration;
-
 
     }
 
@@ -29,8 +29,9 @@ export default class Driver {
         const speedLimitAcc = this.getSpeedLimitAcc(dt);   // null if at or over limit
         const tailgateAcc = this.getTailgateAcc(dt, sit);
         const matchSpeedsAcc = this.getMatchSpeedsAcc(dt, sit);
+        const roadIssueAcc = this.getRoadIssueAcc();
 
-        const cautionAccelerations = [tailgateAcc, matchSpeedsAcc];
+        const cautionAccelerations = [tailgateAcc, matchSpeedsAcc, roadIssueAcc];
         const cautionAcc = TRAFFIC.minIgnoringNulls(cautionAccelerations);
 
 
@@ -74,7 +75,7 @@ export default class Driver {
             const follow = yourCar.length + myCar.speed * my.tau;     //      following distance
 
             if (dx < yourCar.length) {
-                console.log(`  collision!  •  at t = ${TRAFFIC.when.toFixed(1)}, #${myCar.id} rear-ends #${yourCar.id}`);
+                console.log(`t = ${TRAFFIC.when.toFixed(2)} •• collision! #${myCar.id} rear-ends #${yourCar.id}`);
                 acc = yourCar.acceleration - my.normalAcc;
                 this.myCar.usingBrake = true;
 
@@ -88,7 +89,7 @@ export default class Driver {
                 }
             }
             if (acc < -1) {
-                console.log(`tailgating: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} range ${sit.dist.toFixed(2)} m.`);
+                console.log(`t = ${TRAFFIC.when.toFixed(2)} •• tailgating: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} range ${sit.dist.toFixed(2)} m.`);
             }
         }
         return acc;
@@ -111,9 +112,22 @@ export default class Driver {
 
             }
             if (acc < -1) {
-                console.log(`match speeds: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} [range ${dx.toFixed(2)} m acc= ${yourCar.acceleration}]. dv = ${dv.toFixed(2)} follow = ${follow.toFixed(0)}   `);
+                console.log(`t = ${TRAFFIC.when.toFixed(2)} •• match speeds: #${myCar.id} gets ${acc.toFixed(2)} about #${yourCar.id} [range ${dx.toFixed(2)} m acc= ${yourCar.acceleration}]. dv = ${dv.toFixed(2)} follow = ${follow.toFixed(0)}   `);
             }
         }
+        return acc;
+    }
+
+    getRoadIssueAcc() {
+        let acc = null;
+
+        const issue = this.findNearestRoadIssue();
+        if (issue.issue) {
+            if (issue.issue === "curve" && issue.targetSpeed < this.myCar.speed) {
+                acc = (issue.targetSpeed *  issue.targetSpeed - this.myCar.speed * this.myCar.speed) / 2 / issue.dist;
+            }
+        }
+
         return acc;
     }
 
@@ -143,6 +157,27 @@ export default class Driver {
             In this section, we have methods for finding nearby traffic
             and other obstructions.
      */
+
+    findNearestRoadIssue() {
+        let theIssue = { issue : null, dist : Infinity};
+        const myLane = this.myCar.where.lane;
+
+        if (myLane.type === "road") {
+            const theJunctionLane = myLane.defaultSuccessor;
+            const curveSpeed = theJunctionLane.maxSafeSpeed;
+            const deltaV = this.myCar.speed - curveSpeed;
+            const theDistance = myLane.length - this.myCar.where.u;     //  our distance to the curve
+            if (theDistance < (deltaV * this.myCar.speed) / this.normalDecel ) {
+                theIssue = {
+                    issue: "curve",
+                    targetSpeed : curveSpeed,
+                    dist: theDistance
+                }
+            }
+        }
+        return theIssue;
+    }
+
 
 
     async findNearestCar() {

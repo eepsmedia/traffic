@@ -26,19 +26,31 @@ export let codapData = [];
 
 let randomLaneChangeProbability = 0.0;
 
-export async function initialize() {
+export function initialize() {
+    addListeners();
+    document.getElementById("mapMenu").innerHTML = MAPMAKER.makeMapMenuGuts();
+    hideShowSettings();
+    restartSimulation();
+}
+
+async function restartSimulation() {
+
+    theEdges = {};
+    theNodes = {};
+    theVehicles = [];
+    focusCar = null;
+
+    const theFileName = document.getElementById('mapMenu').value
+    await MAPMAKER.loadMap(theFileName);
+
     when = 0.0;
     isRunning = false;
-    addListeners();
-
-    await MAPMAKER.loadMap("test-intersections");
-
     setUpCODAPData();
     MAPVIEW.initialize();
     setFocusDataVisibility();
     setStartStopVisibility();
 
-    spit("initialized!");
+    console.log("restarting simulation");
 }
 
 export function spit(message) {
@@ -126,7 +138,12 @@ function displayFocusCarData() {
 }
 
 function newCar() {
-    const theEdge = theEdges[1];        //  the "1" is the id of the first edge.
+    const anywhere = document.getElementById("carsAppearAnywhere").checked;
+    const edgeKeyArray = Object.keys(theEdges);
+    const ix = anywhere ? Math.floor(Math.random() * edgeKeyArray.length) : 1;
+    const theEdgeKey = edgeKeyArray[ix];
+    const theEdge = theEdges[theEdgeKey];       //  the "1" is the id of the first edge.
+
     const theLaneNumber = Math.floor(Math.random() * theEdge.nLanes);   //    theEdge.nLanes - 1;     //  right lane
     const theLane = theEdge.lanes[theLaneNumber];
     const where = new Location(theLane, 0);
@@ -208,8 +225,20 @@ function addListeners() {
     document.getElementById('stopButton').addEventListener('click', () => {
         stopAnimation();
     });
+    document.getElementById('settingsButton').addEventListener('click', () => {
+        hideShowSettings();
+    });
+    document.getElementById('closeSettingsButton').addEventListener('click', () => {
+        hideShowSettings();
+    });
+    document.getElementById('mapMenu').addEventListener('change', () => {
+        restartSimulation();
+    });
+}
 
-
+function hideShowSettings() {
+    const settings = document.getElementById("settings");
+    settings.style.display = settings.style.display === "none" ? "flex" : "none";
 }
 
 function rescale() {
@@ -237,6 +266,7 @@ export const constants = {
     kDefaultCoastAcceleration: -0.5,    //      m / s^2
     kDefaultDesiredSpeedZoneWidth: 1,  //  how many m/s above the desired speed is still OK
     kDefaultLaneChangeDuration: 3,
+    kMaxTransverseAcceleration: 4,      //  m/s^2 that is, about half a g
 
     //  lanes
     kDefaultSpeedLimit: 11, //      just under 25 mph

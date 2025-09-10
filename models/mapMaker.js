@@ -11,11 +11,36 @@ import * as VECTOR from "../Vector.js"
 
 let theMap = {};
 
+const theMaps = [
+    {
+        file : "test-map.json",
+        title : "Default Map"
+    },
+    {
+        file : "around-rect.json",
+        title : "Round and Round"
+    },
+    {
+        file : "test-intersections.json",
+        title : "test intersections Map"
+    },
+    {
+        file : "test-two-way.json",
+        title : "test two-way roads"
+    }
+]
+
+
 export async function loadMap(iMapFilename) {
+
+    if (!iMapFilename) {
+        iMapFilename = theMaps[0].file;
+    }
+
     const theNodes = TRAFFIC.theNodes;
     const theEdges = TRAFFIC.theEdges;
 
-    let theFileName = `maps/${iMapFilename}.json`;
+    let theFileName = `./maps/${iMapFilename}`;
     let response;
 
     try {
@@ -31,8 +56,8 @@ export async function loadMap(iMapFilename) {
 
     //  pick one of these!
 
-    //  const loadedMap = JSON.parse(theText).map;
-    const loadedMap = makeGrid().map;
+    const loadedMap = JSON.parse(theText).map;
+    // const loadedMap = makeGrid().map;
 
     theMap["title"] = loadedMap.name;
 
@@ -188,4 +213,13 @@ function displayMapState() {
         console.log(`edge #${edge.id} has ${edge.lanes.length} lanes.`);
         edge.lanes.forEach(lane => { console.log(lane.toString())})
     }
+}
+
+export function makeMapMenuGuts() {
+
+    let out = "";
+    theMaps.forEach(map => {
+        out += `<option value="${map.file}">${map.title}</option>`;
+    })
+    return out;
 }

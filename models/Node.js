@@ -144,49 +144,55 @@ export default class Node {
             let rightConnection = null;
 
             this.outPorts.forEach(outPort => {
-                const sameNumberOfLanes = (inPort.edge.nLanes === outPort.edge.nLanes);
-                const sameLane = (inPort.roadLane.laneNumber === outPort.roadLane.laneNumber);
-                const onlyOnePath = this.outEdges.length === 1;
-                const isLeftLane = inPort.roadLane.laneNumber === 0;
-                const isRightLane = inPort.roadLane.laneNumber === inPort.edge.nLanes - 1;
+                    const sameNumberOfLanes = (inPort.edge.nLanes === outPort.edge.nLanes);
+                    const sameLane = (inPort.roadLane.laneNumber === outPort.roadLane.laneNumber);
+                    const onlyOnePath = this.outEdges.length === 1;
+                    const isLeftLane = inPort.roadLane.laneNumber === 0;
+                    const isRightLane = inPort.roadLane.laneNumber === inPort.edge.nLanes - 1;
 
-                const aLane = Lane.fromPorts(inPort, outPort);  //  make new `Lane` object
-                const potentialRole = aLane.routeRole;
+                    const aLane = Lane.fromPorts(inPort, outPort);  //  make new `Lane` object
+                    const potentialRole = aLane.routeRole;
 
-                if (sameNumberOfLanes && sameLane) {
-                    if ((potentialRole === "straight") ||
-                        potentialRole === "left" && isLeftLane ||
-                        potentialRole === "right" && isRightLane) {
-                        //  now we know there IS a connection possible between these Ports
+                    if (sameNumberOfLanes && sameLane) {
+                        if ((potentialRole === "straight") ||
+                            potentialRole === "left" && isLeftLane ||
+                            potentialRole === "uturn" && isLeftLane ||
+                            potentialRole === "right" && isRightLane) {
+                            //  now we know there IS a connection possible between these Ports
 
-                        this.storeLane(aLane);
+                            this.storeLane(aLane);
 
-                        if (potentialRole === "straight") {
-                            straightConnection = aLane;
-                        } else if (potentialRole === "left" && isLeftLane) {
-                            leftConnection = aLane;
-                        } else if (potentialRole === "right" && isRightLane) {
-                            rightConnection = aLane;
+                            if (potentialRole === "straight") {
+                                straightConnection = aLane;
+                            } else if (potentialRole === "uturn" && isLeftLane) {
+                                leftConnection = aLane;
+                            } else if (potentialRole === "left" && isLeftLane) {
+                                leftConnection = aLane;
+                            } else if (potentialRole === "right" && isRightLane) {
+                                rightConnection = aLane;
+                            }
+                            console.log(`     node #${this.id} connecting L${inLane.id} to junction lane L${aLane.id}`);
+                        } else if (onlyOnePath) {
+                            this.storeLane(aLane);
+
+                            if (potentialRole === "uturn") {
+                                leftConnection = aLane;
+                            } else if (potentialRole === "left") {
+                                leftConnection = aLane;
+                            } else if (potentialRole === "right") {
+                                rightConnection = aLane;
+                            }
+                            console.log(`     node #${this.id} (one choice) )connecting L${inLane.id} to junction lane L${aLane.id} `);
+                        } else {
+                            console.log(`     node  #${this.id} (internal) no connection between L${inLane.id} and L${outPort.roadLane.id}`);
                         }
-                        console.log(`     node #${this.id} connecting L${inLane.id} to junction lane L${aLane.id}`);
-                    } else if (onlyOnePath) {
-                        this.storeLane(aLane);
-
-                        if (potentialRole === "left") {
-                            leftConnection = aLane;
-                        } else if (potentialRole === "right") {
-                            rightConnection = aLane;
-                        }
-                        console.log(`     node #${this.id} (one choice) )connecting L${inLane.id} to junction lane L${aLane.id} `);
                     } else {
-                        console.log(`     node  #${this.id} (internal) no connection between L${inLane.id} and L${outPort.roadLane.id}`);
+                        console.log(`     node  #${this.id} (internal) no connection between L${inLane.id} and L${outPort.roadLane.id} because the number of lanes is different`)
                     }
-                } else {
-                    console.log(`     node  #${this.id} (internal) no connection between L${inLane.id} and L${outPort.roadLane.id} because the number of lanes is different`)
+
+
                 }
-
-
-            })
+            )
             if (straightConnection) inLane.defaultSuccessor = straightConnection;
             else if (rightConnection) inLane.defaultSuccessor = rightConnection;
             else if (leftConnection) inLane.defaultSuccessor = leftConnection;
@@ -194,8 +200,7 @@ export default class Node {
         });
     }
 
-    storeLane(aLane)
-    {
+    storeLane(aLane) {
         aLane.portIn.junctionLanes.push(aLane);
         aLane.portOut.junctionLanes.push(aLane.portOut.roadLane);   //  todo: figure out if this is necessary.
         this.junctionLanes.push(aLane);
@@ -219,8 +224,8 @@ export default class Node {
 
         const sinTheta = e1.unitVectorOut.cross(e2.unitVectorIn); //  positive for left turns
 
-        if (sinTheta > 0) {
-            console.log(`   edge ${e1.id} is to the right of edge ${e2.id}`);
+        if (sinTheta >= 0) {
+            console.log(`   edge ${e1.id} is to the right of edge ${e2.id}. Left turn, no reduction.`);
             //  theReduction remains zero...
         } else {
             const cosTheta = e1.unitVectorOut.dot(e2.unitVectorIn);

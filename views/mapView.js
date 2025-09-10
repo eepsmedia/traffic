@@ -7,8 +7,9 @@ let zoomScale = 1;
 export function initialize() {
     window.addEventListener("resize", resizeWindow);
     paper = d3.select("#mapSVG");
+    paper.selectAll('*').remove();
 
-    rescale()
+    rescale();
 }
 
 export function rescale() {

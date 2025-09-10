@@ -1,0 +1,107 @@
+{
+  "map": {
+    "name": "round and round",
+    "nodes": {
+      "1": {
+        "x": 50,
+        "y": 0
+      },
+      "2": {
+        "x": 250,
+        "y": 0
+      },
+      "3": {
+        "x": 300,
+        "y": 50
+      },
+      "4": {
+        "x": 300,
+        "y": 150
+      },
+      "5" : {
+        "x" : 250,
+        "y" : 200
+      },
+      "6" : {
+        "x" : 50,
+        "y" : 200
+      },
+      "7": {
+        "x": 0,
+        "y": 150
+      },
+      "8" : {
+        "x" : 0,
+        "y" : 50
+      }
+    },
+    "edges": {
+      "1": {
+        "from" : 1,
+        "to": 2,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "2": {
+        "from" : 2,
+        "to": 3,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "3": {
+        "from" : 3,
+        "to": 4,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "4": {
+        "from" : 4,
+        "to": 5,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null,
+        "shoulderColor" : null
+      },
+      "5": {
+        "from" : 5,
+        "to": 6,
+        "edgeSpeedLimit" : 15,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "6": {
+        "from" : 6,
+        "to": 7,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "7": {
+        "from" : 7,
+        "to": 8,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      },
+      "8": {
+        "from" : 8,
+        "to": 1,
+        "nLanes": 3,
+        "oneway": true,
+        "shoulder" : null,
+        "median" : null
+      }
+    }
+  }
+}

@@ -66,43 +66,6 @@
         "nLanes": 2,
         "oneway": true,
         "shoulder" : null,
-        "median" : null,
-        "shoulderColor" : null
-      }
-
-    },
-    "moreEdges" : {
-      "5": {
-        "from" : 5,
-        "to": 6,
-        "edgeSpeedLimit" : 15,
-        "nLanes": 2,
-        "oneway": true,
-        "shoulder" : null,
-        "median" : null
-      },
-      "6": {
-        "from" : 6,
-        "to": 7,
-        "nLanes": 2,
-        "oneway": true,
-        "shoulder" : null,
-        "median" : null
-      },
-      "7": {
-        "from" : 7,
-        "to": 8,
-        "nLanes": 2,
-        "oneway": true,
-        "shoulder" : null,
-        "median" : null
-      },
-      "8": {
-        "from" : 8,
-        "to": 5,
-        "nLanes": 2,
-        "oneway": true,
-        "shoulder" : null,
         "median" : null
       }
     }

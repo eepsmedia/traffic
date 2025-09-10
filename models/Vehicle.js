@@ -77,7 +77,7 @@ export default class Vehicle {
                 const leftover = u - lane.length;
                 this.where.lane = newLane;
                 this.where.u = leftover;
-                console.log(`    #${this.id} moved to lane ${this.where.lane.id} with ${leftover.toFixed(1)} m left over.`);
+                console.log(`t = ${TRAFFIC.when.toFixed(2)} #${this.id} moved to lane ${this.where.lane.id} with ${leftover.toFixed(1)} m left over.`);
                 this.wrapLanes(this.where.u, this.where.lane);
             } else {
                 TRAFFIC.removeVehicleByID(this.id);
