@@ -41,6 +41,13 @@ export default class Vehicle {
         this.totalDistance += du;
         this.speed += this.acceleration * dt;
 
+        if (this.speed < 0.1) {     //      stopping
+            if (this.driver.mode === Driver.modes.mSlowingForStop) {
+                this.speed = 0;
+                this.driver.stopAtStop();
+            }
+        }
+
         const myLane = this.where.lane;
 
         //  wrap to the next lane
@@ -67,6 +74,18 @@ export default class Vehicle {
             const laneData = `${this.where.lane.id},${this.where.u.toFixed(2)},${this.effectiveLaneNumber.toFixed(1)}`;
             TRAFFIC.codapData.push(`${this.id},${basics},${laneData}`);
         }
+
+        this.driver.step(dt);
+    }
+
+    stoppingAtStop() {
+        const theDistance =  myLane.length - this.myCar.where.u - TRAFFIC.constants.kDefaultStopSignReduction;
+        if (this.speed < 0.1
+            && this.drivermode === Driver.modes.mSlowingForStop
+            && theDistance < 1
+        ) {
+            this.driver.stopAtStop();
+        }
     }
 
     wrapLanes(u, lane) {
@@ -77,7 +96,7 @@ export default class Vehicle {
                 const leftover = u - lane.length;
                 this.where.lane = newLane;
                 this.where.u = leftover;
-                console.log(`t = ${TRAFFIC.when.toFixed(2)} #${this.id} moved to lane ${this.where.lane.id} with ${leftover.toFixed(1)} m left over.`);
+                //  console.log(`t = ${TRAFFIC.when.toFixed(2)} #${this.id} moved to lane ${this.where.lane.id} with ${leftover.toFixed(1)} m left over.`);
                 this.wrapLanes(this.where.u, this.where.lane);
             } else {
                 TRAFFIC.removeVehicleByID(this.id);

@@ -20,6 +20,8 @@ export default class Edge {
         this.laneWidth = iJSONedge.laneWidth ?  iJSONedge.laneWidth :  TRAFFIC.constants.kDefaultLaneWidth;
         this.laneColor = iJSONedge.laneColor ?  iJSONedge.laneColor :  TRAFFIC.constants.kDefaultLaneColor;
 
+        this.stop = iJSONedge.stop ?  iJSONedge.stop :  false;
+
         this.inReduction = 0;
         this.outReduction = 0;
 

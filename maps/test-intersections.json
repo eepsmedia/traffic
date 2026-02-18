@@ -11,35 +11,37 @@
         "y": 50
       },
       "3": {
-        "x": 50,
-        "y": 50
+        "x": -10,
+        "y": 100
       },
       "4": {
-        "x": 50,
-        "y": 100
+        "x": -10,
+        "y": 150
       }
     },
     "edges": {
       "1": {
         "from" : 1,
         "to": 2,
-        "nLanes": 2,
+        "nLanes": 1,
         "oneway": true,
         "shoulder" : null,
-        "median" : null
+        "median" : null,
+        "stop" : true
       },
       "2": {
         "from" : 2,
         "to": 3,
-        "nLanes": 2,
+        "nLanes": 1,
         "oneway": true,
         "shoulder" : null,
-        "median" : null
+        "median" : null,
+        "stop" : true
       },
       "3": {
         "from" : 3,
         "to": 4,
-        "nLanes": 2,
+        "nLanes": 1,
         "oneway": true,
         "shoulder" : null,
         "median" : null

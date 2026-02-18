@@ -102,6 +102,15 @@ function drawRoads(iEdges) {
         .attr("stroke-width", lane => lane.width)
         .attr("class", "lane")
 
+    roads.selectAll(".stopsign")
+        .data((e) => e.lanes.filter(lane => lane.stop))
+        .join("circle")
+        .attr("cx", lane => lane.end.x)
+        .attr("cy", lane => lane.end.y)
+        .attr("r", lane => lane.width * 0.5)
+        .attr("fill", "red")
+        .attr("class", "stopsign")
+
     roads.selectAll(".shoulder")
         .data((e) => [e.shoulder])
         .join("line")
@@ -173,16 +182,6 @@ function drawCars(iVehicles) {
         .join("circle")
         .attr("cy", c => -c.width * 0.4)
         .attr("cx", c => -c.length)
-        /*
-        .attr("r", (c) => {
-            if (c.usingBrake) {
-                console.log(`${c.id} is braking`);
-                return TRAFFIC.constants.kBrakelightRadius;
-            } else {
-                return TRAFFIC.constants.kTaillightRadius;
-            }
-        })
-        */
         .attr("r", c => c.usingBrake ? TRAFFIC.constants.kBrakelightRadius : TRAFFIC.constants.kTaillightRadius)
         .attr("fill", TRAFFIC.constants.kTaillightColor)
         .attr("class", "right-taillight")

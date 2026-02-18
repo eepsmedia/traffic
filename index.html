@@ -40,11 +40,13 @@ local just this: http://localhost/apps/traffic/
         <h3>traffic</h3>
         <div id="otherControls" class="controlRow">
             <div class="controlRow">
-                <div><span id="timeDisplay"></span></div>
+                <div id="time">
+                    <span id="timeDisplay"></span>
+                </div>
                 <div id="startStopControls">
                     <input id="stepButton" type="button" value="step">
-                    <input id="startButton" type="button" value="start">
-                    <input id="stopButton" type="button" value="stop">
+                    <input id="startButton" class="toolButton" type="image" src="art/play.png"  value="start">
+                    <input id="stopButton" class="toolButton" type="image" src="art/pause.png"   value="pause">
                 </div>
                 <div>
                     <input id="carButton" class="toolButton" type="image" src="art/car2.png" value="new car"
@@ -52,6 +54,7 @@ local just this: http://localhost/apps/traffic/
                 </div>
                 <div>
                     <span id="frameRateDisplay"></span>
+                    <span id="timeScaleDisplay"></span>
                 </div>
                 <input id="rescaleButton" type="button" value="rescale">
                 <input id="emitDataButton" class="toolButton" type="image" src="art/to-clipboard.png"

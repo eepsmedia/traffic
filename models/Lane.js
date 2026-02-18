@@ -25,6 +25,7 @@ export default class Lane {
         const lane = new Lane(iLaneNumber);
         lane.type = "road";
         lane.laneType = "edge";
+        lane.stop = iEdge.stop;
 
         lane.routeRoles = {};       //  this plural, an object, exists for "road" lanes
 
@@ -216,7 +217,8 @@ export default class Lane {
             }
         }
         const line3 = `    ${(this.routeRole) ? role1 : role2}`;
-        const line4 = this.center ? `    center: ${this.center.toString()}, r = ${this.radius.length.toFixed(2)}` : `    straight`;
+        let line4 = this.center ? `    center: ${this.center.toString()}, r = ${this.radius.length.toFixed(2)}` : `    straight`;
+        line4 += ` •• ${this.stop ? "stop sign" : "no stop"}`
         return line1 + "\n" + line2 + "\n" + line3 + "\n" + line4;
     }
 }

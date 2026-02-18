@@ -72,10 +72,19 @@ input {
     border-radius: 5px;
 }
 
+#startStopControls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-direction: row;
+}
+
 #otherControls {
     display: flex;
     align-items: center;
     flex-direction: column;
+    gap: 12px;
+
 }
 
 .controlRow {
@@ -105,6 +114,6 @@ input {
 }
 
 .toolButton {
-    width: 20px;
+    height: 20px;
     cursor: pointer;
 }

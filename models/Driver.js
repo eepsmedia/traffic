@@ -18,7 +18,48 @@ export default class Driver {
         this.speedZoneWidth = TRAFFIC.constants.kDefaultDesiredSpeedZoneWidth;
         this.overSpeedLimit = TRAFFIC.constants.kDefaultOverSpeedLimit;
         this.laneChangeDuration = TRAFFIC.constants.kDefaultLaneChangeDuration;
+        this.mode = Driver.modes.mNormal;
+        this.stopTimer = null;
+        this.roadIssueTargetStopLocation = null;
 
+    }
+
+    static modes = {
+        mNormal : 0,
+        mSlowingForStop : 1,
+        mStoppedForStop : 2,
+        mStartingFromStop : 3,
+
+        kStopDuration : 1.000
+    }
+
+    step(dt) {
+        if (this.stopTimer < 0) {
+            this.startAtStop();
+        }
+
+        switch (this.mode) {
+            case Driver.modes.mStoppedForStop:
+                this.stopTimer -= dt;
+                break;
+            default:
+                break;
+        }
+    }
+
+    stopAtStop() {
+        this.mode = Driver.modes.mStoppedForStop;
+        this.stopTimer = Driver.modes.kStopDuration;
+    }
+
+    startAtStop() {
+        this.roadIssueTargetStopLocation = null;
+        this.mode = Driver.modes.mStartingFromStop;
+        this.stopTimer = null;
+    }
+
+    toNextLane() {
+        this.mode = Driver.modes.mNormal;
     }
 
     async getAcceleration(dt) {
@@ -122,9 +163,18 @@ export default class Driver {
         let acc = null;
 
         const issue = this.findNearestRoadIssue();
-        if (issue.issue) {
+        //      todo: fix this; we still want to calculate this acc except when we're starting up again.
+        if (
+            (this.mode === Driver.modes.mNormal
+                || this.mode === Driver.modes.mSlowingForStop)
+            && issue.issue) {
+            const dv = issue.targetSpeed - this.myCar.speed;
             if (issue.issue === "curve" && issue.targetSpeed < this.myCar.speed) {
-                acc = (issue.targetSpeed *  issue.targetSpeed - this.myCar.speed * this.myCar.speed) / 2 / issue.dist;
+                acc = -dv * dv / 2 / issue.dist;
+            }
+            if (issue.issue === "stop") {
+                acc = -dv * dv / 2 / issue.dist;
+                this.mode = Driver.modes.mSlowingForStop;
             }
         }
 
@@ -156,22 +206,46 @@ export default class Driver {
     /*
             In this section, we have methods for finding nearby traffic
             and other obstructions.
+
      */
 
+    /**
+     * @description Find the nearest road issue, if any.
+     * Issues include curves and stop signs.
+     *
+     * Called from `getRoadIssueAcc()`.
+     *
+     * @returns {{issue: null, dist: number}}
+     */
     findNearestRoadIssue() {
         let theIssue = { issue : null, dist : Infinity};
         const myLane = this.myCar.where.lane;
 
         if (myLane.type === "road") {
-            const theJunctionLane = myLane.defaultSuccessor;
-            const curveSpeed = theJunctionLane.maxSafeSpeed;
-            const deltaV = this.myCar.speed - curveSpeed;
-            const theDistance = myLane.length - this.myCar.where.u;     //  our distance to the curve
-            if (theDistance < (deltaV * this.myCar.speed) / this.normalDecel ) {
-                theIssue = {
-                    issue: "curve",
-                    targetSpeed : curveSpeed,
-                    dist: theDistance
+            if (myLane.defaultSuccessor) {
+                const theJunctionLane = myLane.defaultSuccessor;
+                const curveSpeed = theJunctionLane.maxSafeSpeed;
+                const deltaV = this.myCar.speed - curveSpeed;
+                const theDistance = myLane.length - this.myCar.where.u;     //  our distance to the curve
+                if (theDistance < (deltaV * this.myCar.speed) / this.normalDecel) {
+                    theIssue = {
+                        issue: "curve",
+                        targetSpeed: curveSpeed,
+                        dist: theDistance
+                    }
+                }
+            }
+            if (myLane.stop) {
+                if (!this.roadIssueTargetStopLocation) {
+                    this.roadIssueTargetStopLocation = myLane.length - TRAFFIC.constants.kDefaultStopSignReduction;
+                }
+                const theDistance =  this.roadIssueTargetStopLocation - this.myCar.where.u;
+                if (theDistance > 0 && theDistance < (this.myCar.speed * this.myCar.speed) / this.normalDecel) {
+                    theIssue = {
+                        issue: "stop",
+                        dist: theDistance,
+                        targetSpeed: 0
+                    }
                 }
             }
         }

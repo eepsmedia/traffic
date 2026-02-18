@@ -21,7 +21,10 @@ let dt = 0.02;      //  1/30;
 const stepDT = 0.5;
 let animationID = null;
 let isRunning = false;
-let elapsed = 0;
+let updateDuration = 0;
+let lastTime = null;
+let trueFrameDuration = null;
+
 export let codapData = [];
 
 let randomLaneChangeProbability = 0.0;
@@ -60,12 +63,15 @@ export function spit(message) {
     spitoon.innerHTML = debugText;
 }
 
-function step() {
+/**
+ * User presses the step button
+ */
+function manualStep() {
     stopAnimation()
     const now = new Date();
     updateModel(stepDT);
     redraw();
-    elapsed = new Date() - now;
+    updateDuration = new Date() - now;
 }
 
 function updateModel(dt) {
@@ -77,7 +83,7 @@ function updateModel(dt) {
 
 function redraw() {
     MAPVIEW.draw();
-    displayStep();
+    displayTimeInfo();
     displayFocusCarData();
     displayCarsTable();
 }
@@ -89,7 +95,9 @@ function animate() {
         updateModel(dt);
         redraw();
         animationID = requestAnimationFrame(animate);
-        elapsed = new Date() - now;
+        updateDuration = new Date() - now;
+        trueFrameDuration = now - lastTime;
+        lastTime = now;
     }
 }
 
@@ -104,14 +112,17 @@ function stopAnimation() {
     isRunning = false;
     if (animationID) cancelAnimationFrame(animationID);
     setStartStopVisibility();
-
 }
 
-function displayStep() {
+function displayTimeInfo() {
+
     const timeDisplay = document.getElementById("timeDisplay");
     timeDisplay.innerHTML = `${when.toFixed(1)}`;
     const frameRateDisplay = document.getElementById("frameRateDisplay");
-    frameRateDisplay.innerHTML = `${elapsed.toFixed(1)} ms`;
+    frameRateDisplay.innerHTML = `${updateDuration.toFixed(1)} ms`;
+
+    const timeScaleDisplay = document.getElementById("timeScaleDisplay");
+    timeScaleDisplay.innerHTML = `${(trueFrameDuration/(dt * 1000)).toFixed(3)} `;
 }
 
 function displayCarsTable() {
@@ -196,7 +207,7 @@ function setStartStopVisibility() {
 
 function addListeners() {
     document.getElementById('stepButton').addEventListener('click', () => {
-        step();
+        manualStep();
     });
     document.getElementById('carButton').addEventListener('click', () => {
         newCar();
@@ -267,6 +278,7 @@ export const constants = {
     kDefaultDesiredSpeedZoneWidth: 1,  //  how many m/s above the desired speed is still OK
     kDefaultLaneChangeDuration: 3,
     kMaxTransverseAcceleration: 4,      //  m/s^2 that is, about half a g
+    kMinimumSpeed : 0.1,            //      m/s, lower than this we stop
 
     //  lanes
     kDefaultSpeedLimit: 11, //      just under 25 mph
@@ -276,6 +288,7 @@ export const constants = {
     kDefaultMedianColor: "#c4c4c4",
     kDefaultShoulderColor: "#c4c4c4",
     kDefaultLaneColor: "#cccccc",
+    kDefaultStopSignReduction : 3,      //  meters back from the port
 
     //cars
     kDefaultCarLength: 4.6,    //      VW ID.4
