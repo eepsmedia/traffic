@@ -26,7 +26,8 @@ export function rescale() {
 }
 
 export function draw() {
-    drawRoads(TRAFFIC.theEdges);
+    drawJunctions(TRAFFIC.theNodes);   // <-- add this line, first
+    // drawRoads(TRAFFIC.theEdges);
     drawEdges(TRAFFIC.theEdges);
     drawNodes(TRAFFIC.theNodes);
     drawCars(TRAFFIC.theVehicles);
@@ -123,6 +124,79 @@ function drawRoads(iEdges) {
         .attr("class", "shoulder")
 
 
+}
+
+function getJunctionHullPoints(node) {
+    const points = [];
+
+    const allEdges = [...node.inEdges, ...node.outEdges];
+    const uniqueEdges = [...new Map(allEdges.map(e => [e.id, e])).entries()].map(([,e]) => e);
+
+    uniqueEdges.forEach(edge => {
+        const perp = edge.unitVectorIn.perpendicular();
+        // the reduction tells us how far back from the node origin the road ends
+        const isInEdge = node.inEdges.includes(edge);
+        const reduction = isInEdge ? edge.outReduction : edge.inReduction;
+        const dir = isInEdge ? edge.unitVectorOut : edge.unitVectorIn;
+        
+        // base point: on the node origin, stepped back along the edge
+        const base = {
+            x: node.origin.x + dir.x * reduction,
+            y: node.origin.y + dir.y * reduction
+        };
+
+        // two corners: inner (at median) and outer (at shoulder)
+        points.push([base.x + perp.x * edge.median.offset,
+                     base.y + perp.y * edge.median.offset]);
+        points.push([base.x + perp.x * (edge.median.offset + edge.nLanes * edge.laneWidth + edge.shoulder.width),
+                     base.y + perp.y * (edge.median.offset + edge.nLanes * edge.laneWidth + edge.shoulder.width)]);
+    });
+
+    return points;
+}
+
+function drawJunctions(iNodes) {
+    const aNodes = Object.values(iNodes);
+    
+    // temporary debug
+    aNodes.forEach(node => {
+        console.log(`Node ${node.id}: ${node.inPorts.length} inPorts, ${node.outPorts.length} outPorts`);
+        node.inPorts.forEach(p => console.log(`  inPort ${p.id} origin: ${p.origin} edge width: ${p.edge.width} offset: ${p.roadLane.offset} theta: ${p.theta}`));
+        node.outPorts.forEach(p => console.log(`  outPort ${p.id} origin: ${p.origin} edge width: ${p.edge.width} offset: ${p.roadLane.offset} theta: ${p.theta}`));
+    });
+    // ... rest of function
+
+    const junctions = zoomContainer.selectAll(".junction")
+        .data(aNodes, n => n.id)
+        .join("g")
+        .attr("class", "junction");
+
+    junctions.selectAll(".junctionPavement")
+        .data(node => {
+            // Collect all port origins for this node
+            const points = getJunctionHullPoints(node);
+
+            /*
+            const points = [
+                ...node.inPorts.map(p => [p.origin.x, p.origin.y]),
+                ...node.outPorts.map(p => [p.origin.x, p.origin.y])
+            ];
+            */
+
+            // Need at least 3 points for a hull
+            if (points.length < 3) return [];
+            const hull = d3.polygonHull(points);
+
+            console.log(`Node ${node.id} hull:`, hull);
+
+            return hull ? [hull] : [];
+        })
+        .join("polygon")
+        .lower()                                    // push to back of SVG stack
+        .attr("points", hull => hull.map(p => p.join(",")).join(" "))
+        .style("fill", TRAFFIC.constants.kDefaultLaneColor)   // bright red test
+        .style("stroke", "none")
+        .attr("class", "junctionPavement");
 }
 
 function drawCars(iVehicles) {
