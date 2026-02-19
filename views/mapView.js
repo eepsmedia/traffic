@@ -27,7 +27,7 @@ export function rescale() {
 
 export function draw() {
     drawJunctions(TRAFFIC.theNodes);   // <-- add this line, first
-    // drawRoads(TRAFFIC.theEdges);
+    drawRoads(TRAFFIC.theEdges);
     drawEdges(TRAFFIC.theEdges);
     drawNodes(TRAFFIC.theNodes);
     drawCars(TRAFFIC.theVehicles);
